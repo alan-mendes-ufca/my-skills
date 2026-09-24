@@ -26,6 +26,7 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 repo_dir="$(cd -- "$script_dir/.." && pwd -P)"
 skills=(
   humanizer simplify verification-planning post-refactor security-audit
+  cost-aware-delegation
   antigravity-reviewer antigravity-debugger antigravity-security antigravity-architect
 )
 destinations=("$HOME/.agents/skills" "$HOME/.claude/skills")
@@ -75,7 +76,7 @@ if [[ "$mode" == "--check" ]]; then
     printf 'PENDENTE: links ainda não instalados. Execute: %s --install\n' "$0"
     exit 1
   fi
-  printf 'OK: os 18 links locais estão corretos.\n'
+  printf 'OK: os 20 links locais estão corretos.\n'
   exit 0
 fi
 
