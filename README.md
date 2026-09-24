@@ -13,6 +13,7 @@ próprio `SKILL.md`.
 | `verification-planning` | Planejar evidências e validações proporcionais a uma mudança. |
 | `post-refactor` | Examinar um trecho refatorado em busca de regressões. |
 | `security-audit` | Estruturar auditorias de segurança com escopo explícito. |
+| `cost-aware-delegation` | Delegar execução a subagentes mais baratos sem terceirizar julgamento técnico. |
 | `antigravity-reviewer` | Pedir uma segunda opinião sobre implementação ou diff relevante. |
 | `antigravity-debugger` | Pedir revisão de uma investigação difícil de falha. |
 | `antigravity-security` | Pedir revisão adversarial de limites de confiança e segurança. |
@@ -57,6 +58,7 @@ oferecer. Exemplos de invocação explícita:
 Codex:  Use $humanizer para revisar este documento.
 Claude: /humanizer Revise este documento.
 Gemini: Use a skill humanizer para revisar este documento.
+Codex:  Use $cost-aware-delegation para coordenar esta tarefa com economia de modelos.
 ```
 
 No Codex, use `/skills` para conferir a descoberta. No Gemini CLI, confira com
