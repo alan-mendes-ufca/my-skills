@@ -1,0 +1,1 @@
+../../antigravity-reviewer/scripts/ask-antigravity.sh
