@@ -13,7 +13,7 @@ próprio `SKILL.md`.
 | `verification-planning` | Planejar evidências e validações proporcionais a uma mudança. |
 | `post-refactor` | Examinar um trecho refatorado em busca de regressões. |
 | `security-audit` | Estruturar auditorias de segurança com escopo explícito. |
-| `cost-aware-delegation` | Delegar execução a subagentes mais baratos sem terceirizar julgamento técnico. |
+| `cost-aware-delegation` | Delegar execução a subagentes mais baratos e escalar por gates objetivos, sem terceirizar julgamento técnico. |
 | `antigravity-reviewer` | Pedir uma segunda opinião sobre implementação ou diff relevante. |
 | `antigravity-debugger` | Pedir revisão de uma investigação difícil de falha. |
 | `antigravity-security` | Pedir revisão adversarial de limites de confiança e segurança. |
