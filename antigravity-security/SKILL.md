@@ -65,27 +65,31 @@ Run this skill's `scripts/ask-antigravity.sh`, preferably via stdin:
 ~/.agents/skills/antigravity-security/scripts/ask-antigravity.sh "Focused request with evidence"
 ```
 
-The four skills share the helper stored in `antigravity-reviewer/scripts` through
-relative symlinks. Keep these skill folders together when moving the bundle; for
-standalone distribution copy the resolved helper into the standalone skill. Loading
-another skill's instructions is unnecessary. Requires Linux, Bash, `agy` and `bwrap`.
-The helper uses `agy --sandbox --print` with a 10-minute native timeout (override via
-`ANTIGRAVITY_REVIEW_TIMEOUT=15m`), a private temporary context file and a fixed prompt.
-It avoids large shell arguments, preserves stderr, returns the answer on stdout,
-propagates errors and rejects empty responses. Model context limits still apply.
+The four skills share the central Bash helper and its Python companion through
+relative symlinks. Keep the bundle together; standalone copies need both scripts.
+See [shared runtime documentation](../antigravity-reviewer/scripts/README.md) for dependencies and authentication.
 
-Bubblewrap mounts the host read-only except the disposable directory and Antigravity
-CLI state needed for sessions/authentication. Restrictive settings are overlaid only
-inside that process, leaving the user's configuration unchanged. Agent file writes,
-commands, MCP tools and browser actions are denied. No repository write mounts,
-permission bypasses, commits, pushes, dependency installs, configuration changes,
-migrations, database changes or destructive operations are allowed. The calling agent implements.
+Reviews use Boost by default. `ANTIGRAVITY_REVIEW_MODE=standard` selects the
+conventional mode; invalid or empty modes exit 2. Boost may use internal analysis
+workers inside the same filesystem sandbox. One invocation counts as one
+consultation; the caller still verifies findings and makes the final decision.
+
+The helper uses a fixed prompt and a private read-only context file, with a
+10-minute timeout (`ANTIGRAVITY_REVIEW_TIMEOUT` accepts positive `s`, `m`, or `h`
+values). It propagates failures and rejects empty responses. Model limits apply.
+Bubblewrap mounts only explicit runtime resources, context, fresh disposable
+state and a private authentication socket. Real HOME, repositories and previous
+history are absent. Restrictive permissions deny writes, shell, MCP and browser
+use; the user's configuration is not mounted or overwritten. Raw CLI diagnostics
+are suppressed to protect authentication data. The caller implements changes.
 Compare Git status, staged/unstaged diffs and relevant untracked-file hashes before
 and after consultation. Investigate unexpected changes without resetting user files.
 
-Use cached Google/Antigravity account authentication. For the second opinion, call `agy` directly; do not substitute API keys or a Gemini CLI session.
+Use the existing AGY session through the isolated Secret Service broker; do not
+substitute API keys or a Gemini CLI session.
 If OAuth is required, ask the user to authenticate interactively with `agy`.
 For authentication, quota, timeout, permission or network failures, report the
 limitation and continue independent work by the calling agent where possible. Never weaken isolation,
 retry identical failures repeatedly or claim a failed consultation was a review.
-Temporary files are removed on exit; Antigravity can retain context in its own history.
+Temporary state and local review history are removed on exit; provider-side
+retention is outside the helper's control.

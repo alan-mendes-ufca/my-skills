@@ -21,6 +21,8 @@ próprio `SKILL.md`.
 
 As skills `antigravity-*` requerem Linux, `agy` e `bwrap`. Elas complementam a
 análise do agente que as invoca; não substituem sua investigação nem decisão.
+Boost é o padrão; `ANTIGRAVITY_REVIEW_MODE=standard` seleciona o modo convencional.
+Consulte os [pré-requisitos e isolamento do helper](antigravity-reviewer/scripts/README.md).
 
 ## Instalação local
 
