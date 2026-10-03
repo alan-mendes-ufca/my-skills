@@ -1,5 +1,13 @@
 # Resultado da investigação: Boost headless
 
+> **Registro histórico.** Este relatório descreve a tentativa anterior com
+> `--ro-bind / /`, que foi descartada. O estado descrito em "Estado final" não
+> é mais o atual: o modo Boost, `ANTIGRAVITY_REVIEW_MODE` e o filesystem mínimo
+> foram implementados depois, conforme
+> [antigravity-boost-isolation-investigation.md](antigravity-boost-isolation-investigation.md)
+> e [antigravity-reviewer/scripts/README.md](../antigravity-reviewer/scripts/README.md).
+> Caminhos em `/tmp` citados abaixo eram artefatos locais e não acompanham o repositório.
+
 Validação em 30/09/2026 (America/Fortaleza), com `agy 1.2.13`, Linux e
 Bubblewrap. **Boost funciona com `agy --print`, mas a integração não foi
 publicada porque a validação de isolamento dos workers falhou.** O helper e

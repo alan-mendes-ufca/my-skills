@@ -73,6 +73,9 @@ ANTIGRAVITY_REVIEW_MODE=standard antigravity-reviewer/scripts/ask-antigravity.sh
 
 The runtime closure and Secret Service item were verified for this machine and
 CLI version. Other platforms/versions may fail closed and need investigation;
-there is no broad filesystem fallback. The CLI and local utilities remain
+there is no broad filesystem fallback. Libraries are mounted only as resolved by
+`ldd`, under the name the loader requests; anything loaded later with `dlopen`
+is absent. In particular, glibc older than 2.34 loads `libnss_dns` at runtime,
+so DNS resolution inside the namespace fails on those systems. The CLI and local utilities remain
 trusted, and this design does not restrict network destinations or prevent
 SIGKILL/power loss from interrupting cleanup.

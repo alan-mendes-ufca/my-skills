@@ -1,5 +1,12 @@
 # Protótipo de filesystem mínimo para Antigravity
 
+> **Registro histórico.** Este relatório antecede a integração. As menções a
+> "nenhuma alteração funcional aplicada" e "helper no estado anterior" valiam
+> naquele momento; o controlador `run-isolated-review.py` foi integrado depois e
+> revalidado com AGY 1.2.14. O estado atual, os testes e os limites estão em
+> [antigravity-reviewer/scripts/README.md](../antigravity-reviewer/scripts/README.md).
+> Caminhos em `/tmp` citados abaixo eram artefatos locais e não acompanham o repositório.
+
 Data: 30/09/2026, America/Fortaleza. AGY 1.2.13, Linux/Bubblewrap.
 Foi lido integralmente `antigravity-boost-validation.md`, conforme autorização
 para usar o relatório local no lugar do caminho inexistente em `/mnt/data`.
