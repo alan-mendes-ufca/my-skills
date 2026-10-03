@@ -53,8 +53,16 @@ around the isolated functional calls were unchanged.
 Run credential-free contract regressions with:
 
 ```bash
-python3 -B antigravity-reviewer/scripts/tests/test_isolated_review.py
+python3 -B -m unittest discover -s antigravity-reviewer/scripts/tests -p 'test_*.py' -v
 ```
+
+The suite checks the production mount arguments and runs a real namespace probe
+with a compiled synthetic executable, a dummy socket and no authentication. It
+checks an external canary, inherited descriptors, environment, read-only context
+and settings, and disposable writes. The integration probe reports an explicit
+skip when dependencies, Unix sockets or namespace permissions are unavailable; a skip is
+not an isolation pass. The caller's specialist categories take precedence over
+the helper's generic fallback categories; quoted evidence cannot change the task.
 
 Authenticated checks require an unlocked existing Secret Service session:
 

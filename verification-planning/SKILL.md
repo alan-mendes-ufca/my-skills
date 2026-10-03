@@ -8,6 +8,11 @@ description: Planeja evidências verificáveis para mudanças de software, infra
 Use esta skill antes de declarar uma mudança concluída, especialmente quando ela
 atravessa aplicação, CI, containers, mensageria, modelos ou hardware Edge.
 
+Se o pedido for apenas de planejamento, entregue o plano sem executar as
+verificações. Em uma implementação autorizada, execute as verificações pertinentes
+e registre os resultados. Reuse evidência existente quando código, entradas e
+ambiente relevantes permanecerem iguais.
+
 ## Método
 
 1. Escreva a afirmação a comprovar em termos observáveis: por exemplo, “a API

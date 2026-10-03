@@ -13,7 +13,7 @@ próprio `SKILL.md`.
 | `verification-planning` | Planejar evidências e validações proporcionais a uma mudança. |
 | `post-refactor` | Examinar um trecho refatorado em busca de regressões. |
 | `security-audit` | Estruturar auditorias de segurança com escopo explícito. |
-| `cost-aware-delegation` | Delegar execução a subagentes mais baratos e escalar por gates objetivos, sem terceirizar julgamento técnico. |
+| `cost-aware-delegation` | Orquestrar com modelos identificados, contexto mínimo, orçamento de delegação e gates de risco. |
 | `antigravity-reviewer` | Pedir uma segunda opinião sobre implementação ou diff relevante. |
 | `antigravity-debugger` | Pedir revisão de uma investigação difícil de falha. |
 | `antigravity-security` | Pedir revisão adversarial de limites de confiança e segurança. |
@@ -67,6 +67,25 @@ No Codex, use `/skills` para conferir a descoberta. No Gemini CLI, confira com
 `/skills list` e recarregue com `/skills reload`. No Claude Code, `/humanizer`
 aparece entre os comandos quando a skill está disponível. Cada agente também
 pode selecionar uma skill pela descrição em seu `SKILL.md`.
+
+## Delegação e verificação
+
+A `cost-aware-delegation` informa o modelo solicitado por tarefa e distingue o
+modelo efetivo confirmado do desconhecido. Os quatro papéis são níveis de
+trabalho, não configurações instaladas de modelos. O agente consulta as capacidades
+da sessão; a skill não altera o modelo principal nem cria workers no provedor.
+
+O orçamento inicial é ajustável (2 workers simultâneos, 3 inicializações e uma
+rodada de correção por subtarefa). A economia depende do consumo total e da
+qualidade; sem medição, deve ser declarada como não medida. Consulte o
+[protocolo de avaliação](cost-aware-delegation/references/evaluation.md) para
+comparar a política com execução direta.
+
+As regressões do helper não precisam de credenciais:
+
+```bash
+python3 -B -m unittest discover -s antigravity-reviewer/scripts/tests -p 'test_*.py' -v
+```
 
 ## Limites
 

@@ -1,245 +1,203 @@
 ---
 name: cost-aware-delegation
-description: Coordena subagentes para reduzir custo e uso de modelos caros sem sacrificar interpretação, decisões técnicas ou validação final. Use em tarefas não triviais e decomponíveis quando houver trabalho mecânico, exploratório, repetitivo, paralelo ou de validação que possa ser delegado com segurança, e quando uma decisão de alto risco ou uma investigação travada exigir capacidade superior por gates objetivos.
+description: Orquestre tarefas não triviais e decomponíveis para economizar limites da assinatura, selecionando e informando modelos reais por subtarefa, controlando contexto e tentativas e mantendo decisões e validação final no agente principal. Use também quando gates de risco ou investigação travada exigirem revisão independente.
 ---
 
 # Delegação econômica de agentes
 
-Use esta skill para economizar capacidade de modelos mais fortes sem transformar a tarefa em uma cascata de agentes nem terceirizar decisões importantes.
-
-Princípio central: **delegue execução; retenha julgamento**.
-
-## Responsabilidade do agente principal
-
-O agente principal atua como orquestrador. Ele deve manter responsabilidade por:
-
-- interpretar a intenção e as restrições do usuário;
-- resolver ambiguidades relevantes;
-- decompor o problema e escolher o que delegar;
-- decisões de arquitetura, produto, segurança e trade-offs;
-- integrar resultados de múltiplos agentes;
-- revisar evidências e rejeitar conclusões fracas;
-- executar ou supervisionar a validação final;
-- produzir a resposta final e assumir as decisões tomadas.
-
-Não use um subagente barato para reinterpretar requisitos ambíguos ou decidir algo cujo erro tenha impacto material.
-
-Nenhum worker, de qualquer nível, assume a decisão final de arquitetura, produto ou segurança. Um nível superior fornece análise, revisão ou implementação; o agente principal avalia o resultado contra as evidências e decide.
-
-## Ciclo de execução
-
-Para tarefas não triviais, siga este ciclo:
-
-1. **Entenda** o objetivo, os limites e o estado atual antes de delegar.
-2. **Planeje** uma abordagem curta e identifique dependências entre subtarefas.
-3. **Decomponha** em blocos com entradas e saídas claras.
-4. **Cheque delegação e gates**: para cada bloco, avalie custo, necessidade de raciocínio, isolamento de contexto, paralelismo, custo do erro e os gates obrigatórios de escalonamento.
-5. **Execute ou delegue** diretamente ao nível adequado, pelo mecanismo nativo de subagentes quando decidir delegar. Não faça escalonamento em cascata por padrão.
-6. **Integre** os resultados no contexto principal.
-7. **Valide** as conclusões e mudanças relevantes com evidência adequada.
-8. **Finalize** somente depois da checagem de capacidade e de reconciliar conflitos, lacunas e falhas de validação.
-
-Reavalie os gates sempre que surgir evidência nova, não apenas no passo 4.
-
-## Roteamento por nível de trabalho
-
-### Worker barato
-
-Prefira o worker mais barato disponível para trabalho delimitado e verificável, como:
-
-- buscas direcionadas no repositório;
-- inventários de arquivos, símbolos, chamadas e dependências;
-- coleta de evidências estruturadas;
-- execução de testes, lint, build e matrizes de validação já definidas;
-- edições pequenas e especificadas;
-- tarefas repetitivas ou de alto volume;
-- documentação mecânica baseada em fatos já decididos.
-
-Peça evidência estruturada, como caminhos, símbolos, resultados e erros. O agente principal sintetiza relações e toma decisões.
-
-### Worker intermediário
-
-Use um worker intermediário quando a subtarefa exigir raciocínio localizado, mas ainda tiver escopo claro, por exemplo:
-
-- investigar um bug restrito a um componente;
-- implementar uma alteração moderadamente complexa já especificada;
-- escrever ou corrigir testes não triviais;
-- refatorar lógica localizada preservando contratos conhecidos;
-- comparar poucas alternativas técnicas dentro de critérios definidos pelo agente principal.
-
-Ele pode propor opções e implementar trabalho delimitado, mas não deve assumir a decisão arquitetural ou de produto final.
-
-### Worker profundo
-
-Use um worker de nível igual ou superior ao do agente principal, ou outro modelo forte, somente quando houver benefício real de contexto separado ou paralelismo, como:
-
-- investigação difícil que pode ser conduzida de forma independente;
-- análise de uma parte grande e desacoplada do sistema;
-- revisão técnica profunda de uma proposta já formada;
-- implementação complexa suficientemente isolada para justificar um segundo contexto forte;
-- encaminhamento exigido por um gate obrigatório de escalonamento.
-
-Não o use apenas porque a tarefa é grande. Se o trabalho estiver fortemente acoplado ao raciocínio principal, mantenha-o no agente principal.
-
-### Worker excepcional
-
-Reserve o modelo mais caro ou excepcional para casos raros:
-
-- falha material dos níveis anteriores em uma questão realmente difícil;
-- problema de alta consequência que exija capacidade adicional;
-- análise independente excepcionalmente complexa e bem delimitada.
-
-Não use como etapa automática de revisão nem como destino de toda incerteza.
-
-## Quando delegar
-
-Prefira delegação quando uma subtarefa limitada tiver benefício claro de pelo menos um destes tipos:
-
-- menor custo de modelo;
-- menor latência por paralelismo;
-- isolamento útil de contexto;
-- redução de volume na thread principal;
-- execução mecânica ou repetitiva;
-- validação independente.
-
-Uma tarefa grande e decomponível não deve terminar com zero delegação apenas porque o agente principal conseguiria fazer tudo sozinho, desde que existam subtarefas limitadas com benefício real.
-
-## Quando não delegar
-
-Execute diretamente no agente principal quando:
-
-- a tarefa for trivial ou de uma única etapa;
-- o overhead de explicar, aguardar e integrar for maior que o trabalho;
-- a subtarefa estiver fortemente acoplada à interpretação em andamento;
-- delegar a execução exigiria transferir uma decisão crítica (quando um gate obrigatório de escalonamento se aplica, transfere-se análise ou revisão independente, nunca a decisão);
-- o contexto necessário for tão amplo que duplicá-lo anule a economia;
-- a divisão produzir apenas “teatro de agentes” sem ganho mensurável.
-
-Não microdelegue ações minúsculas apenas para demonstrar uso de subagentes.
-
-## Paralelismo
-
-Paralelize somente subtarefas genuinamente independentes. Respeite o limite de concorrência disponível no ambiente e processe em lotes quando houver mais trabalho independente que slots de agentes.
-
-Não paralelize tarefas que dependam do mesmo arquivo, estado mutável, decisão ainda não tomada ou resultado intermediário.
-
-## Gates obrigatórios de escalonamento
-
-A escalada não depende de o agente atual considerar a tarefa "difícil". Cada gate abaixo descreve uma condição observável, não um grau de confiança. Os gates 1, 2 e 8 exigem estimar impacto; nesses casos, aplique o critério indicado e registre-o. Basta um gate para que a decisão afetada exija capacidade superior:
-
-1. **Arquitetura difícil de reverter**: decisão arquitetural que envolva múltiplos componentes (dois ou mais módulos, serviços ou contratos públicos) e cuja reversão exija migração de dados, mudança de contrato público ou retrabalho em mais de um componente.
-2. **Segurança com impacto material**: decisão sobre autenticação, autorização, segredos, dados sensíveis ou fronteiras de confiança cujo erro possa expor dados ou credenciais reais, permitir acesso indevido ou escalar privilégios.
-3. **Requisitos sem resolução**: requisitos relevantes contraditórios, ou ambiguidade que as evidências disponíveis não resolvem. Se o usuário puder esclarecer, pergunte a ele antes de escalar; o gate cobre o que a evidência técnica deveria resolver e não resolve.
-4. **Duas tentativas sem resultado**: duas tentativas fundamentadas, cada uma com hipótese e verificação observável, sem explicar nem corrigir o problema. Falhas de ambiente, permissão ou rede não contam como tentativas.
-5. **Hipóteses sem discriminação**: duas ou mais hipóteses plausíveis de causa raiz permanecem sem discriminação depois de uma rodada de verificações locais ao alcance, como ler o código relevante e executar o teste ou o log que separa as hipóteses.
-6. **Evidências em contradição**: evidências relevantes se contradizem e a divergência não se explica por erro de coleta, verificado na mesma rodada de verificações locais.
-7. **Integração não verificável**: a mudança atravessa múltiplos limites de sistema e a integração não pode ser validada localmente.
-8. **Custo assimétrico do erro**: uma conclusão errada teria consequência grave e não reversível a baixo custo, como perda de dados, indisponibilidade, decisão irreversível ou retrabalho de dias, significativamente superior ao custo de consultar um nível mais forte. Correções rotineiras e facilmente reversíveis não acionam este gate.
-
-Quando um gate for satisfeito e houver nível de capacidade superior disponível, antes de finalizar aquela decisão o agente deve:
-
-- **encaminhar** a subtarefa apropriada, isolada e com entradas e saída definidas; ou
-- **solicitar revisão independente** desse nível, quando a decisão estiver acoplada ao raciocínio principal: formule antes sua própria análise ou proposta e envie o contexto mínimo necessário para a crítica.
-
-> Um gate não pode ser ignorado apenas porque o agente atual acredita que sua própria resposta é suficiente.
-
-Regras de aplicação:
-
-- O roteamento é direto ao nível necessário, sem cascata. Normalmente é o nível profundo; o excepcional só entra quando o gate combinar consequência excepcional com insuficiência ou falha material do nível profundo.
-- O gate escala a decisão que o disparou, não a tarefa inteira. O restante continua no nível adequado.
-- Encaminhar por gate pede análise ou revisão; não transfere a decisão, que permanece no agente principal.
-- Se não houver nível superior disponível, siga esta ordem: primeiro, uma revisão independente por subagente do mesmo nível, em contexto separado, quando o ambiente oferecer subagentes; se não houver esse recurso, aplique a garantia de execução abaixo, declarando a limitação e a incerteza residual.
-- Para divergir do resultado do nível superior, o agente principal precisa de evidência concreta, como código, teste ou saída de comando, e a registra em uma linha. Sem essa evidência, não descarte a conclusão: verifique-a ou leve a divergência ao usuário.
-- Sem gate satisfeito, insegurança, tarefa longa ou grande volume de trabalho não justificam escalar; colete evidência primeiro.
-- Ao acionar um gate, registre em uma linha, no plano ou na nota de progresso, qual gate foi acionado, a evidência e o destino.
-
-## Garantia de execução da delegação
-
-Quando concluir que uma subtarefa deve ser delegada, seja pelos benefícios de "Quando delegar" ou por um gate, e o ambiente oferecer subagentes compatíveis, a delegação precisa ocorrer pelo mecanismo nativo de agentes ou subagentes do ambiente.
-
-Não conta como delegação:
-
-- simular uma "segunda perspectiva" na mesma thread;
-- executar toda a subtarefa no agente principal depois de decidir delegá-la;
-- apenas dizer qual agente deveria ter sido usado;
-- abrir outro processo independente que não represente um subagente nativo, quando o ambiente oferecer mecanismo próprio de agentes.
-
-Decidir não delegar a execução de uma subtarefa com base em "Quando não delegar" é legítimo, mas não dispensa a revisão independente exigida quando um gate de escalonamento é satisfeito. O que a garantia proíbe é decidir delegar e não executar.
-
-Se o subagente ou o nível necessário não estiver disponível, ou o ambiente exigir uma autorização que não foi concedida, declare explicitamente a limitação e decida de forma consciente entre:
-
-- continuar no agente principal, registrando o risco residual; ou
-- solicitar intervenção do usuário.
-
-Quanto maior o custo do erro, mais peso tem a segunda opção.
-
-## Falhas e escalonamento
-
-Não use uma cascata automática barato → intermediário → profundo → excepcional.
-
-Quando um worker falhar:
-
-1. determine se a falha é de ambiente, entendimento, escopo ou capacidade;
-2. preserve evidências úteis produzidas;
-3. reformule a subtarefa se o problema foi especificação ruim;
-4. verifique se algum gate obrigatório foi acionado e encaminhe diretamente ao nível necessário quando houver justificativa concreta;
-5. mantenha no agente principal decisões sobre mudança de estratégia.
-
-Falhas de teste, build, rede, permissões ou infraestrutura não são automaticamente falhas de raciocínio do worker.
-
-## Contrato de retorno dos subagentes
-
-Sempre que possível, peça retornos curtos e verificáveis contendo:
-
-- o que foi inspecionado ou executado;
-- evidências concretas;
-- resultado ou alteração produzida;
-- incertezas e bloqueios;
-- arquivos ou componentes afetados;
-- comandos e status de validação quando aplicável.
-
-Evite despejos extensos de saída bruta. O agente principal deve sintetizar os resultados e decidir o próximo passo.
-
-## Checagem de capacidade antes de finalizar
-
-Em tarefas não triviais, antes do passo **Finalize**, confirme internamente:
-
-1. Algum gate obrigatório de escalonamento foi acionado?
-2. Se foi, ele foi tratado?
-3. Alguma subtarefa marcada para delegação acabou sendo executada silenciosamente pelo agente principal?
-4. Existem conflitos ou incertezas relevantes que justifiquem capacidade superior?
-5. A validação final sustenta de fato a decisão tomada?
-
-Esta é uma política operacional do agente, não um relatório para o usuário. Se alguma checagem indicar pendência, ou seja, gate acionado e não tratado, delegação decidida e não executada, conflito ou incerteza relevante sem resolução, ou validação insuficiente, resolva-a antes de finalizar: delegue, revalide ou declare a limitação. Comunique ao usuário apenas o que resultar em ação, como limitação declarada, gate com resultado relevante ou risco residual material.
-
-## Mapeamento de papéis
-
-Quando o ambiente oferecer papéis equivalentes aos desta configuração, use-os assim:
-
-- `cheap_worker`: trabalho mecânico, exploratório, repetitivo e validação definida;
-- `balanced_worker`: raciocínio localizado e implementação moderada;
-- `deep_worker`: análise ou implementação forte com benefício de contexto separado;
-- `exceptional_worker`: uso raro para complexidade excepcional.
-
-Se os nomes ou modelos disponíveis forem diferentes, preserve a função de cada nível em vez de depender de um identificador específico de modelo.
-
-### Exemplos por ecossistema (não normativo)
-
-A tabela mostra correspondências aproximadas, apenas como ponto de partida:
-
-| Capacidade | Claude | Codex |
-| --- | --- | --- |
-| barato | Haiku | Luna |
-| intermediário | Sonnet | Terra |
-| profundo | Opus | Sol |
-| excepcional | Opus ou equivalente excepcional | Astra |
-
-- Os nomes podem mudar e a disponibilidade varia por ambiente.
-- Um mesmo modelo pode ocupar mais de um nível.
-- Escolha pela função e pela capacidade do nível, não pelo nome do modelo.
-
-No Claude Code, consulte [references/claude.md](references/claude.md) para o mapeamento dos níveis para tipos de agente e modelos da ferramenta `Agent`.
-
-## Critério de sucesso
-
-A delegação foi bem utilizada quando o agente principal preserva qualidade de interpretação e decisão, enquanto transfere trabalho delimitado para níveis mais baratos ou contextos paralelos, integra os resultados e valida o conjunto antes de concluir.
+**Delegue execução; retenha julgamento.** Minimize o consumo total necessário
+para entregar com qualidade, incluindo orquestração, workers, revisões e retrabalho.
+Menos tempo de execução ou menos contexto no principal não comprovam economia.
+Não converta preços de API em consumo da assinatura sem evidência do provedor.
+
+## Responsabilidade do principal
+
+Interprete intenção e restrições, resolva ambiguidades, decomponha, selecione
+modelos, integre evidências e decida sobre arquitetura, produto e segurança.
+Delegue trabalho substancial delimitado; execute diretamente ações triviais ou
+resolvidas por um comando. Não refaça por padrão toda a investigação do worker.
+Nenhum worker, mesmo mais forte, assume a decisão final.
+
+## Preflight de capacidades e modelos
+
+Faça uma vez por sessão e atualize se houver troca de configuração, falha de
+modelo ou fallback. Leia apenas a referência do ambiente em uso:
+[Codex e Gemini](references/runtimes.md) ou [Claude Code](references/claude.md).
+
+1. Confirme a ferramenta nativa, permissão de delegar, tipos de agente, modelos
+   selecionáveis, esforços suportados, política de contexto e concorrência.
+2. Consulte configuração acessível ou catálogo da sessão. Não invente nomes,
+   disponibilidade ou uma ordem de custo com base apenas no nome do modelo.
+3. Mapeie os papéis abaixo para identificadores reais disponíveis. Separe
+   capacidade, custo conhecido/estimado/desconhecido e esforço de raciocínio.
+4. Se só houver herança, não anuncie um worker mais barato. Prefira execução
+   direta, salvo benefício explícito de qualidade, isolamento ou latência.
+5. Respeite permissões e instruções superiores. A skill não habilita ferramentas,
+   não muda o modelo principal nem instala configurações automaticamente.
+
+## Transparência obrigatória por delegação
+
+Antes de iniciar cada tarefa delegada, publique uma linha ou linha de tabela:
+
+`Tarefa → modelo solicitado: <ID real ou herança> → esforço: <valor ou não exposto> → motivo: <complexidade/risco/benefício> → modelo efetivo: <ID + fonte ou não confirmado>`
+
+O apelido (`cheap_worker`, etc.) é apenas complementar e nunca substitui o modelo.
+Se só houver um alias de família, identifique-o como alias e não invente a versão.
+Use a configuração resolvida do runtime ou os metadados da execução para confirmar
+modelo e esforço efetivos; a autodeclaração do worker não comprova identidade.
+Um parâmetro enviado comprova solicitação, não execução. Sem confirmação, escreva
+**modelo efetivo não confirmado**. Informe diferenças, fallback ou esforço herdado
+assim que observados. Reavalie a economia se a seleção não for respeitada; não
+reinicie trabalho útil apenas para obter outro nome de modelo.
+
+## Ciclo de trabalho
+
+1. Entenda o objetivo e inspecione somente o necessário para definir escopos.
+2. Escolha execução direta ou blocos delegáveis e examine os gates abaixo.
+3. Defina orçamento, responsável por arquivo, aceitação e pacote de contexto.
+4. Anuncie a escolha e delegue pela ferramenta nativa, se disponível e autorizada.
+5. Integre resultados e verifique evidências proporcionais ao risco.
+6. Encerre quando a aceitação estiver sustentada; relate limitações materiais.
+
+## Roteamento por capacidade
+
+| Papel | Trabalho apropriado |
+| --- | --- |
+| `cheap_worker` | Coleta delimitada, edição especificada, tarefas repetitivas e execução de verificações já definidas. |
+| `balanced_worker` | Bug localizado, implementação moderada, testes não triviais e refatoração com contratos conhecidos. |
+| `deep_worker` | Investigação difícil, implementação isolada complexa ou revisão independente exigida por gate. |
+| `exceptional_worker` | Consequência excepcional combinada com insuficiência ou falha material do nível profundo. |
+
+Escolha diretamente a menor capacidade adequada, não necessariamente a mais barata
+em todas as tarefas. Não percorra os quatro níveis em cascata. Use o menor esforço
+suportado adequado à subtarefa; não herde esforço alto por omissão quando for
+possível selecionar explicitamente. Uma tarefa grande não exige modelo profundo
+se puder ser decomposta em trabalhos simples. Não envie requisitos ambíguos ou
+decisões críticas para um worker barato resolver por conta própria.
+
+## Decisão econômica
+
+Delegue execução quando houver economia plausível após considerar preparo,
+contexto duplicado, retorno, integração e risco de retrabalho. Caso a razão seja
+qualidade, independência ou latência, diga isso e registre economia como desconhecida
+quando não houver dados. Não force delegação apenas pelo tamanho da tarefa.
+
+Execute diretamente quando o trabalho for trivial, fortemente acoplado, exigir
+contexto muito amplo ou custar menos que explicar e integrar. Um comando simples
+não precisa de worker. Uma tarefa extensa com blocos independentes econômicos deve
+usar esses blocos, sem transformar cada chamada de ferramenta em uma delegação.
+
+## Orçamento e condições de parada
+
+Defina um orçamento inicial proporcional antes do primeiro spawn. Como ponto de
+partida, use até **2 workers simultâneos, 3 inicializações no total e 1 rodada de
+correção por subtarefa**. Esses valores são padrões ajustáveis, não limites do
+provedor. Respeite qualquer limite mais restritivo do ambiente ou do usuário.
+
+- Conte inicializações e revisões nativas no mesmo orçamento; não redefina o
+  contador a cada etapa. Prefira continuar o worker existente para uma correção
+  no mesmo escopo. Use contexto novo para revisão independente.
+- Amplie o orçamento somente com uma justificativa curta: trabalho restante,
+  benefício ou gate concreto e novo teto. Não peça confirmação para cada ajuste
+  já autorizado; não ultrapasse um limite explícito do usuário sem autorização.
+- Workers não redelegam por padrão. Uma exceção exige escopo, profundidade e
+  orçamento explícitos do principal, além de suporte do runtime.
+- Aguarde notificações de conclusão ou use esperas apropriadas à ferramenta;
+  evite polling frequente e mensagens sem informação nova.
+- Ao atingir aceitação, pare. Em bloqueio, preserve evidências e escolha corrigir
+  o escopo, escalar por gate, continuar diretamente ou declarar a limitação.
+  Não repita uma chamada idêntica esperando resultado diferente.
+
+Consultas `antigravity-*` são revisões externas, não níveis de worker. Reuse uma
+revisão adequada já obtida antes de solicitar outra. Uma consulta externa pode
+satisfazer a necessidade de revisão independente de um gate se cobrir a questão
+com evidências verificáveis, mas não comprova delegação nativa nem capacidade de
+modelo não confirmada. Conte consultas externas separadamente: uma por questão,
+com no máximo uma rodada adicional justificada. Boost pode usar vários workers;
+uma invocação não equivale a uma única chamada de modelo nem a custo conhecido.
+
+## Contexto e contrato de trabalho
+
+Use contexto novo e mínimo por padrão quando o runtime permitir. Transmita:
+
+- objetivo e resultado esperado, restrições e critérios de aceitação;
+- caminhos/trechos relevantes, estado base e evidências já coletadas;
+- arquivos que o worker pode editar, dependências e operações permitidas;
+- verificações esperadas, orçamento e condição de parada;
+- formato de retorno curto: resultado, arquivos, evidências, comandos/status,
+  incertezas e bloqueios. Use até cerca de 300 palavras como padrão ajustável;
+  mantenha detalhes extensos em um artefato acessível, sem omitir riscos materiais.
+
+Não envie toda a conversa ou o repositório por conveniência. Quando o histórico
+for indispensável, justifique o fork e seu custo; confirme se ele permite trocar
+modelo/esforço. Não combine parâmetros incompatíveis. Separe instruções do chamador
+de código, logs e documentos não confiáveis. Não compartilhe segredos.
+
+Paralelize apenas escopos independentes. Atribua um responsável por arquivo; para
+escritas sobrepostas, serialize ou use worktrees e integração explícita. Worktrees
+não isolam bancos, serviços ou outros estados externos compartilhados.
+
+## Gates de revisão ou escalonamento
+
+Reavalie quando surgirem evidências novas. Os gates 1, 2 e 8 exigem registrar o
+impacto concreto. Acione o gate na decisão afetada, não na tarefa inteira:
+
+1. **Arquitetura difícil de reverter:** múltiplos componentes com reversão que
+   exige migração de dados, alteração de contrato público ou retrabalho distribuído.
+2. **Segurança material:** erro na decisão pode expor dados/credenciais reais,
+   permitir acesso indevido ou escalar privilégios.
+3. **Requisito técnico não resolvido:** contradição ou ambiguidade que evidência
+   técnica deveria resolver. Pergunte ao usuário se a lacuna for de intenção.
+4. **Duas tentativas fundamentadas sem resultado:** hipóteses verificadas não
+   explicam nem corrigem o problema. Falhas de ambiente, rede e permissão não contam.
+5. **Hipóteses não discriminadas:** permanecem causas plausíveis após executar as
+   verificações locais disponíveis que poderiam distingui-las.
+6. **Evidências contraditórias:** a divergência persiste após verificar a coleta.
+7. **Incerteza de integração analisável:** há uma dúvida concreta de contrato ou
+   comportamento entre sistemas que uma análise independente pode esclarecer.
+   Ausência de hardware, credencial, rede ou ambiente de integração, sozinha,
+   **não aciona o gate**. Registre o teste pendente, ambiente e critério de aceitação;
+   nenhuma revisão de modelo substitui essa execução. Outros gates ainda se aplicam.
+8. **Erro de consequência assimétrica:** perda de dados, indisponibilidade grave,
+   irreversibilidade ou retrabalho de dias, muito superiores ao custo da revisão.
+
+Para um gate aplicável, encaminhe uma pergunta delimitada ao nível adequado,
+normalmente profundo, ou peça crítica independente da proposta do principal.
+Se não houver capacidade superior, use revisão independente do mesmo nível quando
+possível; se não houver recurso autorizado, declare a limitação e o risco residual.
+Não alegue capacidade adicional quando o modelo for herdado ou não confirmado.
+
+Registre gate, evidência, questão, modelo e resultado. Uma revisão adequada trata
+o gate; a condição continuar verdadeira não exige novas consultas. Reabra somente
+com mudança relevante ou nova evidência. Se o orçamento for insuficiente, replaneje
+explicitamente antes de ampliar. Não use o orçamento para ocultar risco não tratado.
+
+Verifique afirmações de qualquer modelo, inclusive do superior. Aceite ou rejeite
+com evidência; ausência de sustentação é motivo para manter uma alegação como
+hipótese. Não aceite conclusões apenas pela hierarquia de modelos. Se a divergência
+material não puder ser resolvida, explique o que falta em vez de inventar consenso.
+
+## Garantia de execução e falhas
+
+Uma delegação decidida precisa ocorrer pela ferramenta nativa, quando disponível
+e autorizada. Simular outro papel, citar um agente ou abrir uma CLI independente
+não conta. Se novas evidências tornarem a delegação desnecessária, registre a
+mudança de plano; não execute silenciosamente o trabalho previamente delegado.
+
+Classifique falhas como ambiente, especificação, escopo ou capacidade. Preserve
+evidências, faça no máximo a rodada de correção prevista e reavalie gates/orçamento.
+Não troque para API paga, outro provedor ou processo externo como fallback oculto.
+Quando precisar de recurso não autorizado, declare o bloqueio e peça intervenção.
+
+## Integração e verificação final
+
+Confira o diff, contratos e evidências relevantes, aprofundando somente riscos
+concretos ou contradições. Reuse testes já executados se código, entradas e ambiente
+relevantes não mudaram; após integração, verifique os contratos cruzados afetados.
+Um relatório do worker não comprova integração, acesso a hardware ou modelo efetivo.
+
+Antes de concluir, confirme aceitação, gates tratados, delegações executadas ou
+replanejadas, modelo anunciado sem afirmações não verificadas e riscos explícitos.
+Para calibrar esta política, use [references/evaluation.md](references/evaluation.md).
+Compare consumo total e qualidade, não apenas tokens do principal. Sem medição,
+relate **economia não medida**; não prometa percentuais de redução.

@@ -29,7 +29,7 @@ Simplifique a implementação sem alterar o contrato do código.
 
 ## Verificação
 
-Execute a verificação mais próxima e relevante disponível: testes do módulo, checagem de tipos, lint ou teste de integração afetado. Se não puder executar uma verificação, informe qual seria a checagem necessária e por quê.
+Execute a verificação mais próxima e relevante disponível: testes do módulo, checagem de tipos, lint ou teste de integração afetado. Reaproveite evidências de verificações anteriores somente se código, entradas e ambiente relevantes não mudaram. Não repita uma suíte apenas porque outra skill foi acionada. Se não puder executar uma verificação, informe qual seria a checagem necessária e por quê.
 
 ## Entrega
 
