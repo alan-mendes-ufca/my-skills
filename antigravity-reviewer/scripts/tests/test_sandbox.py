@@ -56,7 +56,13 @@ class SandboxTests(unittest.TestCase):
     def test_mount_contract(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            args = self.make_args(root, libraries=["/synthetic/libc.so.6"])
+            args = self.make_args(
+                root,
+                libraries=[
+                    ("libc.so.6", "/synthetic/libc.so.6"),
+                    ("libz.so.1", "/synthetic/libz.so.1.3"),
+                ],
+            )
             mounts = [
                 tuple(args[i : i + 3])
                 for i, arg in enumerate(args)
@@ -70,6 +76,7 @@ class SandboxTests(unittest.TestCase):
                 ("/synthetic/agy", "/runtime/bin/agy"),
                 ("/synthetic/ld-linux", "/synthetic/ld-linux"),
                 ("/synthetic/libc.so.6", "/runtime/lib/libc.so.6"),
+                ("/synthetic/libz.so.1.3", "/runtime/lib/libz.so.1"),
                 (
                     os.path.realpath(controller.find_ca()),
                     "/etc/ssl/certs/ca-certificates.crt",

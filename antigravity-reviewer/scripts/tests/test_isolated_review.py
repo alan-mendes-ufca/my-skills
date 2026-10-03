@@ -175,6 +175,51 @@ class Tests(unittest.TestCase):
                     {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8"},
                 )
 
+    def test_dependencies_mounted_by_soname(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            elf = root / "agy"
+            elf.write_bytes(b"\x7fELF")
+            loader = root / "ld-linux-test.so.2"
+            loader.write_bytes(b"")
+            (root / "libz.so.1.3").write_bytes(b"")
+            (root / "libz.so.1").symlink_to("libz.so.1.3")
+            (root / "libc.so.6").write_bytes(b"")
+            stdout = (
+                "\tlinux-vdso.so.1 (0x1)\n"
+                f"\tlibz.so.1 => {root}/libz.so.1 (0x2)\n"
+                f"\tlibc.so.6 => {root}/libc.so.6 (0x3)\n"
+                f"\t{loader} (0x4)\n"
+            )
+            result = type("Result", (), {"returncode": 0, "stdout": stdout})()
+            with patch.object(m.subprocess, "run", return_value=result):
+                found_loader, libraries = m.elf_dependencies(str(elf), "/usr/bin/ldd")
+            self.assertEqual(found_loader, os.path.realpath(loader))
+            self.assertEqual(
+                libraries,
+                [
+                    ("libc.so.6", os.path.realpath(root / "libc.so.6")),
+                    ("libz.so.1", os.path.realpath(root / "libz.so.1.3")),
+                ],
+            )
+
+    def test_conflicting_dependency_names_fail_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            elf = root / "agy"
+            elf.write_bytes(b"\x7fELF")
+            for name in ("ld-linux-test.so.2", "a", "b"):
+                (root / name).write_bytes(b"")
+            stdout = (
+                f"\tlibx.so.1 => {root}/a (0x1)\n"
+                f"\tlibx.so.1 => {root}/b (0x2)\n"
+                f"\t{root}/ld-linux-test.so.2 (0x3)\n"
+            )
+            result = type("Result", (), {"returncode": 0, "stdout": stdout})()
+            with patch.object(m.subprocess, "run", return_value=result):
+                with self.assertRaises(m.ReviewError):
+                    m.elf_dependencies(str(elf), "/usr/bin/ldd")
+
     def test_reaped_process_not_signalled(self):
         auth = m.PrivateAuth("/synthetic", {})
         auth.processes = [type("Reaped", (), {"pid": 12345, "returncode": 0})()]

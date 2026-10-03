@@ -59,7 +59,13 @@ def parse_duration(value):
 
 
 def elf_dependencies(executable, ldd):
-    """Resolve only direct ELF loader/libraries; wrappers and missing deps fail closed."""
+    """Resolve the ELF loader and libraries; wrappers and missing deps fail closed.
+
+    Libraries are returned as (name, path) pairs. The name is the one the
+    dynamic loader searches for (the SONAME printed left of ``=>``), which often
+    differs from the versioned file the symlink resolves to (libz.so.1 versus
+    libz.so.1.3), so it must be the mount target inside the namespace.
+    """
     with open(executable, "rb") as stream:
         if stream.read(4) != b"\x7fELF":
             raise ReviewError(f"Unsupported non-ELF executable: {executable}")
@@ -73,23 +79,25 @@ def elf_dependencies(executable, ldd):
     )
     if result.returncode:
         raise ReviewError(f"Unable to resolve ELF dependencies for: {executable}")
-    loader, libraries = None, []
+    loader, libraries = None, {}
     for line in result.stdout.splitlines():
         if "not found" in line:
             raise ReviewError(f"Unresolved ELF dependency for: {executable}")
-        match = re.search(r"=>\s+(/\S+)", line) or re.match(r"\s*(/\S+)", line)
+        match = re.match(r"\s*(\S+)\s+=>\s+(/\S+)", line) or re.match(
+            r"\s*((/\S+))", line
+        )
         if not match:
             continue
-        path = os.path.realpath(match[1])
+        name, path = os.path.basename(match[1]), os.path.realpath(match[2])
         if not os.path.isfile(path):
             raise ReviewError(f"Unresolved ELF dependency for: {executable}")
         if "ld-linux" in os.path.basename(path) or "ld-musl" in os.path.basename(path):
             loader = path
-        else:
-            libraries.append(path)
+        elif libraries.setdefault(name, path) != path:
+            raise ReviewError(f"Conflicting ELF dependency {name} for: {executable}")
     if not loader:
         raise ReviewError(f"Unable to identify ELF loader for: {executable}")
-    return loader, sorted(set(libraries))
+    return loader, sorted(libraries.items())
 
 
 def find_ca():
@@ -200,8 +208,8 @@ def build_sandbox_args(
         "SSL_CERT_FILE",
         "/etc/ssl/certs/ca-certificates.crt",
     ]
-    for library in libraries:
-        args += ["--ro-bind", library, "/runtime/lib/" + pathlib.Path(library).name]
+    for name, library in libraries:
+        args += ["--ro-bind", library, "/runtime/lib/" + name]
     for source, target in (
         (runtime / "passwd", "/etc/passwd"),
         (runtime / "group", "/etc/group"),
