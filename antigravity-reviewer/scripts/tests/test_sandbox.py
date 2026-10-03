@@ -1,4 +1,5 @@
 """Credential-free contract and real namespace probes using production arguments."""
+
 import importlib.util
 import os
 from pathlib import Path
@@ -16,7 +17,13 @@ SPEC.loader.exec_module(controller)
 
 
 class SandboxTests(unittest.TestCase):
-    def make_args(self, root, executable="/synthetic/agy", loader="/synthetic/ld-linux", libraries=()):
+    def make_args(
+        self,
+        root,
+        executable="/synthetic/agy",
+        loader="/synthetic/ld-linux",
+        libraries=(),
+    ):
         runtime = root / "runtime"
         runtime.mkdir()
         state = root / "state"
@@ -33,17 +40,28 @@ class SandboxTests(unittest.TestCase):
         }.items():
             (runtime / name).write_text(content)
         return controller.build_sandbox_args(
-            runtime, root, context, state, root / "bus",
-            shutil.which("bwrap") or "/synthetic/bwrap", executable, loader, libraries,
-            os.path.realpath(controller.find_ca()), os.path.realpath("/etc/resolv.conf"),
+            runtime,
+            root,
+            context,
+            state,
+            root / "bus",
+            shutil.which("bwrap") or "/synthetic/bwrap",
+            executable,
+            loader,
+            libraries,
+            os.path.realpath(controller.find_ca()),
+            os.path.realpath("/etc/resolv.conf"),
         )
 
     def test_mount_contract(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             args = self.make_args(root, libraries=["/synthetic/libc.so.6"])
-            mounts = [tuple(args[i:i + 3]) for i, arg in enumerate(args)
-                      if arg in ("--bind", "--ro-bind")]
+            mounts = [
+                tuple(args[i : i + 3])
+                for i, arg in enumerate(args)
+                if arg in ("--bind", "--ro-bind")
+            ]
             self.assertEqual(
                 [item for item in mounts if item[0] == "--bind"],
                 [("--bind", str(root / "state"), "/home/agy")],
@@ -52,29 +70,46 @@ class SandboxTests(unittest.TestCase):
                 ("/synthetic/agy", "/runtime/bin/agy"),
                 ("/synthetic/ld-linux", "/synthetic/ld-linux"),
                 ("/synthetic/libc.so.6", "/runtime/lib/libc.so.6"),
-                (os.path.realpath(controller.find_ca()), "/etc/ssl/certs/ca-certificates.crt"),
+                (
+                    os.path.realpath(controller.find_ca()),
+                    "/etc/ssl/certs/ca-certificates.crt",
+                ),
                 (os.path.realpath("/etc/resolv.conf"), "/etc/resolv.conf"),
                 (str(root / "context.txt"), "/context/context.txt"),
                 (str(root / "bus"), "/auth/bus"),
-                (str(root / "state/.gemini/antigravity-cli/settings.json"),
-                 "/home/agy/.gemini/antigravity-cli/settings.json"),
-                *((str(root / "runtime" / name), "/etc/" + name)
-                  for name in ("passwd", "group", "hosts", "nsswitch.conf")),
+                (
+                    str(root / "state/.gemini/antigravity-cli/settings.json"),
+                    "/home/agy/.gemini/antigravity-cli/settings.json",
+                ),
+                *(
+                    (str(root / "runtime" / name), "/etc/" + name)
+                    for name in ("passwd", "group", "hosts", "nsswitch.conf")
+                ),
             }
-            self.assertEqual({item[1:] for item in mounts if item[0] == "--ro-bind"}, expected_readonly)
+            self.assertEqual(
+                {item[1:] for item in mounts if item[0] == "--ro-bind"},
+                expected_readonly,
+            )
             self.assertEqual(args[-2:], ["--remount-ro", "/"])
-            for flag in ("--clearenv", "--die-with-parent", "--new-session", "--unshare-pid"):
+            for flag in (
+                "--clearenv",
+                "--die-with-parent",
+                "--new-session",
+                "--unshare-pid",
+            ):
                 self.assertIn(flag, args)
             self.assertNotIn("--ro-bind-try", args)
 
     def test_real_namespace_without_credentials(self):
         missing = [tool for tool in ("cc", "bwrap", "ldd") if not shutil.which(tool)]
         if missing:
-            self.skipTest("Namespace probe dependencies unavailable: " + ", ".join(missing))
+            self.skipTest(
+                "Namespace probe dependencies unavailable: " + ", ".join(missing)
+            )
         with tempfile.TemporaryDirectory(prefix="review-sandbox-test-") as directory:
             root = Path(directory)
             source, executable = root / "probe.c", root / "probe"
-            source.write_text(r'''
+            source.write_text(r"""
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -114,24 +149,46 @@ int main(int argc, char **argv) {
     puts("NAMESPACE_OK");
     return 0;
 }
-''')
-            subprocess.run([shutil.which("cc"), str(source), "-o", str(executable)],
-                           check=True, capture_output=True, timeout=20, close_fds=True)
-            loader, libraries = controller.elf_dependencies(str(executable), shutil.which("ldd"))
+""")
+            subprocess.run(
+                [shutil.which("cc"), str(source), "-o", str(executable)],
+                check=True,
+                capture_output=True,
+                timeout=20,
+                close_fds=True,
+            )
+            loader, libraries = controller.elf_dependencies(
+                str(executable), shutil.which("ldd")
+            )
             args = self.make_args(root, str(executable), loader, libraries)
             canary = root / "host-only-canary"
             canary.write_text("PUBLIC_SYNTHETIC_MARKER")
-            with socket.socket(socket.AF_UNIX) as private_bus, canary.open("rb") as inherited:
+            with socket.socket(socket.AF_UNIX) as private_bus, canary.open(
+                "rb"
+            ) as inherited:
                 try:
                     private_bus.bind(str(root / "bus"))
                 except PermissionError as exc:
-                    self.skipTest("Synthetic Unix socket unavailable in this environment: " + str(exc))
+                    self.skipTest(
+                        "Synthetic Unix socket unavailable in this environment: "
+                        + str(exc)
+                    )
                 os.set_inheritable(inherited.fileno(), True)
                 process = controller.close_popen(
-                    args + [loader, "--library-path", "/runtime/lib", "/runtime/bin/agy",
-                            str(canary), str(inherited.fileno())],
-                    stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                    text=True, env=dict(os.environ, REVIEW_TEST_MARKER="SYNTHETIC"),
+                    args
+                    + [
+                        loader,
+                        "--library-path",
+                        "/runtime/lib",
+                        "/runtime/bin/agy",
+                        str(canary),
+                        str(inherited.fileno()),
+                    ],
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    env=dict(os.environ, REVIEW_TEST_MARKER="SYNTHETIC"),
                 )
                 try:
                     stdout, stderr = process.communicate(timeout=10)
@@ -145,11 +202,16 @@ int main(int argc, char **argv) {
                 "setting up uid map: Permission denied",
             )
             if process.returncode and any(message in stderr for message in unsupported):
-                self.skipTest("Bubblewrap namespaces unavailable in this environment: " + stderr.strip())
+                self.skipTest(
+                    "Bubblewrap namespaces unavailable in this environment: "
+                    + stderr.strip()
+                )
             self.assertEqual(process.returncode, 0, stderr)
             self.assertEqual(stdout.strip(), "NAMESPACE_OK")
             self.assertEqual((root / "context.txt").read_text(), "SYNTHETIC_CONTEXT")
-            self.assertEqual((root / "state/.gemini/antigravity-cli/settings.json").read_text(), "{}")
+            self.assertEqual(
+                (root / "state/.gemini/antigravity-cli/settings.json").read_text(), "{}"
+            )
         self.assertFalse(root.exists(), "Disposable fixture was not removed")
 
 
