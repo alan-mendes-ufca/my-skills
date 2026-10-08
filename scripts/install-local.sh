@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Instala links locais por skill para Codex/Gemini CLI e Claude Code.
+# Instala links locais por skill para Codex/Gemini CLI, Claude Code e Antigravity (agy).
 set -euo pipefail
 
 usage() {
@@ -29,7 +29,7 @@ skills=(
   cost-aware-delegation
   antigravity-reviewer antigravity-debugger antigravity-security antigravity-architect
 )
-destinations=("$HOME/.agents/skills" "$HOME/.claude/skills")
+destinations=("$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.gemini/config/skills")
 
 failures=0
 missing=0
@@ -76,7 +76,7 @@ if [[ "$mode" == "--check" ]]; then
     printf 'PENDENTE: links ainda não instalados. Execute: %s --install\n' "$0"
     exit 1
   fi
-  printf 'OK: os 20 links locais estão corretos.\n'
+  printf 'OK: os %d links locais estão corretos.\n' $(( ${#skills[@]} * ${#destinations[@]} ))
   exit 0
 fi
 
