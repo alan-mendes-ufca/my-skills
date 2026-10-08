@@ -12,9 +12,11 @@ ativos fornecidos.
 
 ## Preparação obrigatória
 
-1. Defina os ativos, ambiente autorizado, objetivo, janela de execução e
-   operações permitidas. Se algum desses limites faltar, faça apenas análise
-   estática e registre a limitação.
+1. Defina os ativos fornecidos e o objetivo da revisão. Para análise estática,
+   use o escopo autorizado sem exigir janela operacional ou credenciais. Antes
+   de verificação dinâmica, confirme ambiente, janela quando relevante e
+   operações permitidas; se faltar autorização ou limite necessário, mantenha
+   a análise estática e registre a validação dinâmica pendente.
 2. Mapeie as fronteiras de confiança: usuário para aplicação, frontend para API,
    serviço para banco, dispositivo Edge para broker e serviço interno para
    serviço externo. Para cada fronteira, identifique identidade, autorização,

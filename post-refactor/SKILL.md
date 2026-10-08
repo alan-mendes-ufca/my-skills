@@ -19,10 +19,12 @@ quando a mudança revelar um contrato afetado.
 3. Procure referências que ficaram desatualizadas: importações, chamadas,
    documentação, testes, tipos, configurações, nomes de eventos e caminhos de
    execução.
-4. Execute a menor validação que atravesse o comportamento alterado. Para uma
-   mudança em backend ou frontend, comece pelos testes direcionados; para um
-   fluxo Edge/MQTT, confirme também o contrato de tópico, payload e falha de
-   entrega que a mudança alcança.
+4. Reaproveite evidências válidas se código, entradas e ambiente relevantes não
+   mudaram; não repita verificações apenas pela troca de skill. Execute a menor
+   validação que atravesse o comportamento alterado. Para uma mudança em backend
+   ou frontend, comece pelos testes direcionados; para um fluxo Edge/MQTT,
+   confirme também o contrato de tópico, payload e falha de entrega que a
+   mudança alcança.
 5. Registre achados com severidade, arquivo ou componente, impacto observável e
    correção sugerida. Não transforme melhoria de estilo fora do escopo em parte
    da refatoração sem justificar o risco que ela resolve.
