@@ -47,11 +47,11 @@ O instalador cria um link por skill em:
 | --- | --- |
 | `~/.agents/skills` | Codex e Gemini CLI |
 | `~/.claude/skills` | Claude Code |
+| `~/.gemini/config/skills` | Antigravity (`agy`) |
 
 Ele é idempotente: aceita links que já apontem para esta cópia do repositório e
 recusa arquivos, diretórios ou links que apontem para outro destino. Não apaga,
-move nem sobrescreve nada. Ele não altera `~/.gemini/config/skills` nem
-`~/.codex/skills`.
+move nem sobrescreve nada. Ele não altera `~/.codex/skills`.
 
 Após instalar, reinicie a sessão do agente ou use o comando de recarga que ele
 oferecer. Exemplos de invocação explícita:
