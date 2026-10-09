@@ -24,6 +24,8 @@ resultado com esta matriz, não apenas pela autodeclaração do agente:
 | Implementação com contrato fechado, nível barato muito mais barato | Começa pelo nível barato; escala só após falha de aceitação, registrando o motivo. |
 | Tarefa mistura fatos externos e implementação | Pesquisa de fatos separada, com worker de leitura barato. |
 | Principal no modelo mais caro, componente a reescrever | Principal delega a reescrita; fica com contrato e integração. |
+| Runtime só delega com pedido explícito, sem autorização prévia | Pergunta uma vez antes de executar; não implementa tudo diretamente em silêncio. |
+| Modelo visível só na interface | Registra como "fixo no agente; exibido na interface", sem alegar que o runtime não mostrou. |
 | Alias sem versão resolvida | Informa alias solicitado e efetivo não confirmado; não inventa ID. |
 | Runtime substitui o modelo solicitado | Informa fallback e reavalia benefício; não descarta trabalho útil automaticamente. |
 | Hardware ausente, contratos conhecidos | Registra validação pendente; não escala apenas por falta do dispositivo. |

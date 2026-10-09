@@ -19,6 +19,19 @@ Esta referência não garante aliases, modelos ou recursos em todas as versões.
 4. Ter `model` no schema significa que a seleção existe: não trate a sessão
    como "só herança" nem execute tudo diretamente por esse motivo.
 
+## Autorização para delegar
+
+O Claude Code pode instruir o agente principal a só criar subagentes quando o
+usuário pedir. Uma skill não sobrepõe essa instrução. Com isso, o principal
+tende a executar tudo sozinho, no modelo mais caro, até o usuário pedir.
+
+- Se o usuário ou um `CLAUDE.md` já autorizar a delegação, siga a skill
+  normalmente.
+- Sem essa autorização, em tarefa não trivial e decomponível, pergunte **uma
+  vez, antes de começar a executar**, se pode delegar. Não execute a tarefa
+  inteira diretamente por falta de autorização sem ter perguntado.
+- O README do repositório traz um trecho de `CLAUDE.md` que dá essa autorização.
+
 ## Agentes do repositório (preferenciais)
 
 Se a sessão listar os agentes abaixo (instalados por `scripts/install-local.sh`
@@ -85,26 +98,32 @@ necessário para `deep_worker`. Sem o parâmetro, informe esforço como
 ## Confirmação do modelo efetivo
 
 O parâmetro enviado comprova apenas a solicitação. Um alias (`sonnet`) não
-identifica a versão. Evidências aceitas, geradas pelo runtime:
+identifica a versão. Distinga o que o principal consegue observar do que só o
+usuário vê:
 
-- o modelo exibido na linha do agente na interface (ex.: `Agent(<tarefa>) Sonnet 5.5`);
-- metadados da tarefa ou `/tasks`;
-- mensagens de erro/resultado da API que nomeiam o modelo enviado
-  (ex.: `model sent to the API: claude-sonnet-5-5`).
+- **Observável pelo principal:** texto que chega no resultado ou na notificação
+  do agente, como erros da API que nomeiam o modelo enviado
+  (ex.: `model sent to the API: claude-sonnet-5-5`). Quando aparecer, registre
+  o modelo efetivo e a fonte.
+- **Visível só na interface:** a linha do agente (ex.:
+  `implementador-haiku(<tarefa>) Haiku 5.5`) e `/tasks`. O principal não
+  recebe esse texto e não pode citá-lo como evidência própria.
 
-Quando uma dessas evidências aparecer, registre o modelo efetivo e a fonte na
-próxima atualização ao usuário. Não transfira a verificação ao usuário
-("confira em /tasks") como substituto de ler o que o runtime já mostrou.
-A autodeclaração do worker não comprova identidade. Sem evidência, registre
-`modelo efetivo não confirmado (solicitado: <alias>)`.
+Com os agentes do repositório, o modelo vem fixo no frontmatter. Registre
+`solicitado: <alias> (fixo no agente); efetivo: não observável pelo principal,
+exibido na linha do agente`. Não escreva que "o runtime não mostrou" o modelo,
+porque a interface mostra. A autodeclaração do worker não comprova identidade.
+Fora desses casos, registre `modelo efetivo não confirmado (solicitado: <alias>)`.
 
 Exemplo de anúncio:
 
 `Mapear handlers de auth → Explore / modelo solicitado: haiku (alias) → esforço: low → motivo: coleta delimitada → modelo efetivo: não confirmado`
 
 Lançamentos em lote (`N background agents launched`) não mostram o modelo de
-cada tarefa: publique a tabela de transparência **antes** da chamada, com uma
-linha por tarefa, e não só um resumo posterior.
+cada tarefa. Publique a tabela de transparência, com uma linha por tarefa, no
+texto da mesma resposta e **antes** das chamadas `Agent`. Uma frase-resumo
+("delego X ao sonnet e Y ao haiku") não substitui a tabela. Se não for publicar
+a tabela, lance um agente por vez com a linha de anúncio.
 
 ## Agente principal em planos com limite
 

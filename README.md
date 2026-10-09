@@ -93,6 +93,22 @@ papel, modelo, esforço e ferramentas fixos no frontmatter:
 
 O nome do agente aparece na interface no lugar de `general-purpose`.
 
+O Claude Code pode só criar subagentes quando você pede. Para autorizar a
+delegação por padrão, acrescente ao `~/.claude/CLAUDE.md` (ou ao `CLAUDE.md`
+de um projeto):
+
+```markdown
+## Delegação a subagentes
+- Em tarefas não triviais e decomponíveis, use a skill `cost-aware-delegation`
+  por padrão, sem esperar que eu peça subagentes. Esta instrução autoriza criar
+  subagentes com a ferramenta `Agent`.
+- Siga as regras da skill: agente e modelo escolhidos pelo trabalho, linha de
+  transparência antes de cada delegação, decisões e integração final no agente
+  principal.
+```
+
+O instalador não altera esse arquivo.
+
 O orçamento inicial é ajustável (2 workers simultâneos, 3 inicializações e uma
 rodada de correção por subtarefa). A economia depende do consumo total e da
 qualidade; sem medição, deve ser declarada como não medida. Consulte o

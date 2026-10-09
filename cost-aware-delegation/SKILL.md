@@ -36,6 +36,9 @@ modelo ou fallback. Leia apenas a referência do ambiente em uso:
    direta, salvo benefício explícito de qualidade, isolamento ou latência.
 5. Respeite permissões e instruções superiores. A skill não habilita ferramentas,
    não muda o modelo principal nem instala configurações automaticamente.
+6. Se o runtime exigir pedido explícito do usuário para delegar e não houver
+   autorização, pergunte uma vez antes de começar a executar. Não faça a
+   tarefa inteira diretamente por falta de autorização sem ter perguntado.
 
 ## Transparência obrigatória por delegação
 
