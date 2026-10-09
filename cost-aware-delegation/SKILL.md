@@ -37,7 +37,8 @@ modelo ou fallback. Leia apenas a referência do ambiente em uso:
 
 ## Transparência obrigatória por delegação
 
-Antes de iniciar cada tarefa delegada, publique uma linha ou linha de tabela:
+Antes de iniciar cada tarefa delegada, publique uma linha ou linha de tabela
+(em lançamentos em lote, uma linha por tarefa antes do lançamento):
 
 `Tarefa → modelo solicitado: <ID real ou herança> → esforço: <valor ou não exposto> → motivo: <complexidade/risco/benefício> → modelo efetivo: <ID + fonte ou não confirmado>`
 
@@ -48,8 +49,10 @@ O apelido (`cheap_worker`, etc.) é apenas complementar e nunca substitui o mode
 Se só houver um alias de família, identifique-o como alias e não invente a versão.
 Use a configuração resolvida do runtime ou os metadados da execução para confirmar
 modelo e esforço efetivos; a autodeclaração do worker não comprova identidade.
-Um parâmetro enviado comprova solicitação, não execução. Sem confirmação, escreva
-**modelo efetivo não confirmado**. Informe diferenças, fallback ou esforço herdado
+Um parâmetro enviado comprova solicitação, não execução. Quando o runtime exibir
+o modelo usado (interface, metadados ou erro da API), registre-o como efetivo e
+cite a fonte; não peça ao usuário para conferir o que já está visível. Sem
+confirmação, escreva **modelo efetivo não confirmado**. Informe diferenças, fallback ou esforço herdado
 assim que observados. Reavalie a economia se a seleção não for respeitada; não
 reinicie trabalho útil apenas para obter outro nome de modelo.
 
@@ -98,7 +101,7 @@ correção por subtarefa**. Esses valores são padrões ajustáveis, não limite
 provedor. Respeite qualquer limite mais restritivo do ambiente ou do usuário.
 
 - Conte inicializações e revisões nativas no mesmo orçamento; não redefina o
-  contador a cada etapa. Prefira continuar o worker existente para uma correção
+  contador a cada etapa nem ao retomar após reinício da sessão ou limite de uso. Prefira continuar o worker existente para uma correção
   no mesmo escopo. Use contexto novo para revisão independente.
 - Amplie o orçamento somente com uma justificativa curta: trabalho restante,
   benefício ou gate concreto e novo teto. Não peça confirmação para cada ajuste
@@ -194,6 +197,8 @@ Quando precisar de recurso não autorizado, declare o bloqueio e peça interven�
 
 ## Integração e verificação final
 
+Preserve as ressalvas dos workers ao resumir: um dado que o worker marcou como
+não confirmado não vira "confirmado" no relatório ao usuário.
 Confira o diff, contratos e evidências relevantes, aprofundando somente riscos
 concretos ou contradições. Reuse testes já executados se código, entradas e ambiente
 relevantes não mudaram; após integração, verifique os contratos cruzados afetados.

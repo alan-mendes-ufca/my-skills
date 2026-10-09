@@ -26,14 +26,17 @@ de `model`; confirme-os no schema da sessão antes de usar.
 
 | Papel | `subagent_type` | `model` | Uso |
 | --- | --- | --- | --- |
-| `cheap_worker` (leitura) | `Explore` | `haiku` | Localizar código, coletar trechos, mapear arquivos. |
+| `cheap_worker` (leitura) | `Explore` | `haiku` | Localizar código, coletar trechos, mapear arquivos, pesquisa web sem edição. |
+| `balanced_worker` (pesquisa) | `Explore` | `sonnet` | Pesquisa web com síntese e checagem de fontes, sem editar arquivos. |
 | `cheap_worker` (escrita) | `general-purpose` | `haiku` | Edição totalmente especificada, repetitiva e verificável. |
 | `balanced_worker` | `general-purpose` | `sonnet` | Bug localizado, implementação moderada, testes não triviais. |
 | `deep_worker` (análise) | `Plan` ou `general-purpose` | `opus` | Investigação difícil, plano ou revisão independente de gate. |
 | `deep_worker` (escrita) | `general-purpose` | `opus` | Implementação isolada complexa. |
 | `exceptional_worker` | `general-purpose` | modelo superior do `enum`, se houver | Somente pelo critério excepcional da skill. |
 
-- `Explore` e `Plan` não editam arquivos; não os use para escrita.
+- `Explore` e `Plan` não editam arquivos; não os use para escrita. Pesquisa
+  web e coleta de fontes não exigem `general-purpose`: confira no schema se o
+  `Explore` da sessão tem busca/fetch web e prefira-o.
   Pedir "somente leitura" no prompt de um `general-purpose` não cria sandbox.
 - Se houver agentes customizados (`.claude/agents/*.md`) com papel e modelo
   definidos no frontmatter, prefira-os quando corresponderem ao papel; o
@@ -53,10 +56,38 @@ necessário para `deep_worker`. Sem o parâmetro, informe esforço como
 ## Confirmação do modelo efetivo
 
 O parâmetro enviado comprova apenas a solicitação. Um alias (`sonnet`) não
-identifica a versão. Confirme pelo resultado/metadados da tarefa, por `/tasks`
-quando disponível ou pela configuração resolvida; a autodeclaração do worker
-não comprova identidade. Sem confirmação, registre
+identifica a versão. Evidências aceitas, geradas pelo runtime:
+
+- o modelo exibido na linha do agente na interface (ex.: `Agent(<tarefa>) Sonnet 5.5`);
+- metadados da tarefa ou `/tasks`;
+- mensagens de erro/resultado da API que nomeiam o modelo enviado
+  (ex.: `model sent to the API: claude-sonnet-5-5`).
+
+Quando uma dessas evidências aparecer, registre o modelo efetivo e a fonte na
+próxima atualização ao usuário. Não transfira a verificação ao usuário
+("confira em /tasks") como substituto de ler o que o runtime já mostrou.
+A autodeclaração do worker não comprova identidade. Sem evidência, registre
 `modelo efetivo não confirmado (solicitado: <alias>)`.
+
+Lançamentos em lote (`N background agents launched`) não mostram o modelo de
+cada tarefa: publique a tabela de transparência **antes** da chamada, com uma
+linha por tarefa, e não só um resumo posterior.
+
+## Limites da assinatura e concorrência
+
+Workers consomem a mesma cota da assinatura que o principal. Em planos com
+limite de sessão (ex.: Pro), vários workers `opus` em paralelo esgotam a cota e
+derrubam todos os workers ao mesmo tempo, perdendo o trabalho em andamento.
+
+- Mantenha o padrão de 2 workers simultâneos. Acima disso, justifique e
+  prefira workers `haiku`/`sonnet`.
+- No máximo 1 worker `opus` por vez, salvo pedido explícito do usuário.
+- Se o principal estiver em esforço alto, defina `effort` dos workers
+  explicitamente (seção Esforço) para não herdar o esforço alto.
+- Ao atingir limite de uso (HTTP 429), não relance o mesmo lote completo ao
+  retomar: reduza concorrência e modelo, e retome a partir do estado salvo.
+- Um worker que reenvia o mesmo relatório sem informação nova deve ser
+  encerrado imediatamente (`TaskStop`), não aguardado.
 
 Exemplo de anúncio:
 
