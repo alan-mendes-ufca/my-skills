@@ -41,6 +41,9 @@ Antes de iniciar cada tarefa delegada, publique uma linha ou linha de tabela:
 
 `Tarefa → modelo solicitado: <ID real ou herança> → esforço: <valor ou não exposto> → motivo: <complexidade/risco/benefício> → modelo efetivo: <ID + fonte ou não confirmado>`
 
+Quando o runtime permitir escolher modelo, envie a seleção explicitamente em toda
+delegação; omiti-la herda o modelo principal e anula a economia. Escolha também o
+tipo de agente pelo trabalho, sem cair no tipo genérico por omissão.
 O apelido (`cheap_worker`, etc.) é apenas complementar e nunca substitui o modelo.
 Se só houver um alias de família, identifique-o como alias e não invente a versão.
 Use a configuração resolvida do runtime ou os metadados da execução para confirmar

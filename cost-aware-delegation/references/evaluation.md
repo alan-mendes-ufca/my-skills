@@ -14,6 +14,8 @@ resultado com esta matriz, não apenas pela autodeclaração do agente:
 | Corrigir uma palavra | Execução direta; sem worker nem testes de código irrelevantes. |
 | Dois endpoints independentes, modelos selecionáveis | Escopos e responsáveis separados, IDs disponíveis anunciados, contexto mínimo, integração verificada. |
 | Runtime só herda modelo | Não promete modelo barato; justifica eventual paralelismo por benefício distinto de economia. |
+| Principal forte, `model` selecionável | Toda chamada envia `model`; coleta usa tipo de leitura e modelo econômico; nenhum worker herda o principal sem justificativa. |
+| Tarefa mista de leitura e escrita | Tipos de agente diferem conforme o trabalho; tipo genérico só onde há escrita. |
 | Alias sem versão resolvida | Informa alias solicitado e efetivo não confirmado; não inventa ID. |
 | Runtime substitui o modelo solicitado | Informa fallback e reavalia benefício; não descarta trabalho útil automaticamente. |
 | Hardware ausente, contratos conhecidos | Registra validação pendente; não escala apenas por falta do dispositivo. |
