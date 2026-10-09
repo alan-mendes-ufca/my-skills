@@ -90,29 +90,25 @@ próxima atualização ao usuário. Não transfira a verificação ao usuário
 A autodeclaração do worker não comprova identidade. Sem evidência, registre
 `modelo efetivo não confirmado (solicitado: <alias>)`.
 
+Exemplo de anúncio:
+
+`Mapear handlers de auth → Explore / modelo solicitado: haiku (alias) → esforço: low → motivo: coleta delimitada → modelo efetivo: não confirmado`
+
 Lançamentos em lote (`N background agents launched`) não mostram o modelo de
 cada tarefa: publique a tabela de transparência **antes** da chamada, com uma
 linha por tarefa, e não só um resumo posterior.
 
 ## Limites da assinatura e concorrência
 
-Workers consomem a mesma cota da assinatura que o principal. Em planos com
-limite de sessão (ex.: Pro), vários workers `opus` em paralelo esgotam a cota e
-derrubam todos os workers ao mesmo tempo, perdendo o trabalho em andamento.
+As regras gerais de cota e concorrência estão na skill principal. No Claude Code:
 
-- Mantenha o padrão de 2 workers simultâneos. Acima disso, justifique e
-  prefira workers `haiku`/`sonnet`.
-- No máximo 1 worker `opus` por vez, salvo pedido explícito do usuário.
-- Se o principal estiver em esforço alto, defina `effort` dos workers
-  explicitamente (seção Esforço) para não herdar o esforço alto.
-- Ao atingir limite de uso (HTTP 429), não relance o mesmo lote completo ao
-  retomar: reduza concorrência e modelo, e retome a partir do estado salvo.
-- Um worker que reenvia o mesmo relatório sem informação nova deve ser
-  encerrado imediatamente (`TaskStop`), não aguardado.
-
-Exemplo de anúncio:
-
-`Mapear handlers de auth → Explore / modelo solicitado: haiku (alias) → esforço: low → motivo: coleta delimitada → modelo efetivo: não confirmado`
+- O nível mais caro costuma ser `opus` (`especialista-opus`, `revisor-opus`).
+  Em planos com limite de sessão (ex.: Pro), vários workers `opus` em paralelo
+  esgotam a cota e derrubam todos os workers ao mesmo tempo.
+- O limite de uso aparece como erro `rate_limit` (HTTP 429) no resultado do agente.
+- Defina esforço pela seção Esforço; os agentes do repositório já o fixam no
+  frontmatter.
+- Encerre um worker que repete relatórios com `TaskStop`.
 
 Fonte: https://code.claude.com/docs/en/sub-agents
 

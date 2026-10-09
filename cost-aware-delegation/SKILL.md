@@ -101,8 +101,18 @@ correção por subtarefa**. Esses valores são padrões ajustáveis, não limite
 provedor. Respeite qualquer limite mais restritivo do ambiente ou do usuário.
 
 - Conte inicializações e revisões nativas no mesmo orçamento; não redefina o
-  contador a cada etapa nem ao retomar após reinício da sessão ou limite de uso. Prefira continuar o worker existente para uma correção
-  no mesmo escopo. Use contexto novo para revisão independente.
+  contador a cada etapa nem ao retomar após reinício da sessão ou limite de uso.
+  Prefira continuar o worker existente para uma correção no mesmo escopo. Use
+  contexto novo para revisão independente.
+- Workers consomem a mesma cota do principal. Use no máximo 1 worker do nível
+  mais caro disponível por vez, salvo pedido explícito do usuário; acima de 2
+  workers simultâneos, justifique e prefira níveis mais baratos.
+- Onde o runtime expuser controle de esforço por worker, defina-o explicitamente
+  em cada delegação, para que o worker não herde o esforço alto do principal.
+- Ao atingir limite de uso ou cota, não relance o mesmo lote completo ao retomar:
+  reduza concorrência e nível de modelo e continue a partir do estado salvo.
+- Encerre na primeira repetição o worker que reenviar um relatório sem
+  informação nova, pelo mecanismo de parada do runtime; não o aguarde.
 - Amplie o orçamento somente com uma justificativa curta: trabalho restante,
   benefício ou gate concreto e novo teto. Não peça confirmação para cada ajuste
   já autorizado; não ultrapasse um limite explícito do usuário sem autorização.
