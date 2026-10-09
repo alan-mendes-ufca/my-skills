@@ -49,6 +49,9 @@ O instalador cria um link por skill em:
 | `~/.claude/skills` | Claude Code |
 | `~/.gemini/config/skills` | Antigravity (`agy`) |
 
+Também cria um link por arquivo de `.claude/agents/` em `~/.claude/agents`,
+para que os subagentes do Claude Code valham em qualquer projeto.
+
 Ele é idempotente: aceita links que já apontem para esta cópia do repositório e
 recusa arquivos, diretórios ou links que apontem para outro destino. Não apaga,
 move nem sobrescreve nada. Ele não altera `~/.codex/skills`.
@@ -74,6 +77,20 @@ A `cost-aware-delegation` informa o modelo solicitado por tarefa e distingue o
 modelo efetivo confirmado do desconhecido. Os quatro papéis são níveis de
 trabalho, não configurações instaladas de modelos. O agente consulta as capacidades
 da sessão; a skill não altera o modelo principal nem cria workers no provedor.
+
+No Claude Code, a skill usa os subagentes de `.claude/agents/`, cada um com
+papel, modelo, esforço e ferramentas fixos no frontmatter:
+
+| Agente | Papel | Modelo / esforço | Escrita |
+| --- | --- | --- | --- |
+| `pesquisador-haiku` | Coleta e busca delimitadas | haiku / low | não |
+| `executor-haiku` | Edições especificadas e verificações definidas | haiku / low | sim |
+| `pesquisador-sonnet` | Pesquisa com síntese de fontes | sonnet / medium | não |
+| `implementador-sonnet` | Implementação moderada | sonnet / medium | sim |
+| `especialista-opus` | Problema difícil e isolado | opus / high | sim |
+| `revisor-opus` | Revisão independente exigida por gate | opus / high | não |
+
+O nome do agente aparece na interface no lugar de `general-purpose`.
 
 O orçamento inicial é ajustável (2 workers simultâneos, 3 inicializações e uma
 rodada de correção por subtarefa). A economia depende do consumo total e da

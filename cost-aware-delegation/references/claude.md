@@ -19,7 +19,28 @@ Esta referência não garante aliases, modelos ou recursos em todas as versões.
 4. Ter `model` no schema significa que a seleção existe: não trate a sessão
    como "só herança" nem execute tudo diretamente por esse motivo.
 
-## Mapeamento de papéis
+## Agentes do repositório (preferenciais)
+
+Se a sessão listar os agentes abaixo (instalados por `scripts/install-local.sh`
+em `~/.claude/agents`), use-os como `subagent_type`. O nome já mostra papel e
+modelo na interface, e o frontmatter fixa modelo, esforço e ferramentas.
+
+| Papel | `subagent_type` | Modelo / esforço | Escrita |
+| --- | --- | --- | --- |
+| `cheap_worker` (leitura) | `pesquisador-haiku` | haiku / low | não |
+| `cheap_worker` (escrita) | `executor-haiku` | haiku / low | sim |
+| `balanced_worker` (pesquisa) | `pesquisador-sonnet` | sonnet / medium | não |
+| `balanced_worker` | `implementador-sonnet` | sonnet / medium | sim |
+| `deep_worker` | `especialista-opus` | opus / high | sim |
+| `deep_worker` (revisão de gate) | `revisor-opus` | opus / high | não |
+
+- Envie `model` igual ao do agente (o parâmetro da chamada prevalece sobre o
+  frontmatter). Para outro modelo, escolha outro agente; não sobrescreva, ou o
+  nome exibido deixa de corresponder ao modelo.
+- Não envie `effort`: ele já vem do frontmatter.
+- Se os agentes não estiverem listados, use o mapeamento genérico abaixo.
+
+## Mapeamento genérico de papéis
 
 Use a menor linha adequada. Os aliases abaixo são os valores usuais do `enum`
 de `model`; confirme-os no schema da sessão antes de usar.

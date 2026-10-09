@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Instala links locais por skill para Codex/Gemini CLI, Claude Code e Antigravity (agy).
+# Instala links locais por skill para Codex/Gemini CLI, Claude Code e Antigravity (agy),
+# e links por agente do Claude Code em ~/.claude/agents.
 set -euo pipefail
 
 usage() {
@@ -30,6 +31,24 @@ skills=(
   antigravity-reviewer antigravity-debugger antigravity-security antigravity-architect
 )
 destinations=("$HOME/.agents/skills" "$HOME/.claude/skills" "$HOME/.gemini/config/skills")
+agents_source="$repo_dir/.claude/agents"
+agents_destination="$HOME/.claude/agents"
+
+# Pares origem/destino de todos os links gerenciados.
+sources=()
+targets=()
+for destination in "${destinations[@]}"; do
+  for skill in "${skills[@]}"; do
+    sources+=("$repo_dir/$skill")
+    targets+=("$destination/$skill")
+  done
+done
+shopt -s nullglob
+for agent in "$agents_source"/*.md; do
+  sources+=("$agent")
+  targets+=("$agents_destination/$(basename -- "$agent")")
+done
+shopt -u nullglob
 
 failures=0
 missing=0
@@ -51,19 +70,17 @@ if (( failures )); then
 fi
 
 # Preflight: não cria nenhum link se houver uma colisão em qualquer destino.
-for destination in "${destinations[@]}"; do
-  for skill in "${skills[@]}"; do
-    source="$repo_dir/$skill"
-    target="$destination/$skill"
-    if link_is_correct "$target" "$source"; then
-      :
-    elif [[ -e "$target" || -L "$target" ]]; then
-      printf 'COLISÃO: %s já existe e não aponta para %s\n' "$target" "$source" >&2
-      failures=1
-    else
-      missing=1
-    fi
-  done
+for i in "${!targets[@]}"; do
+  source="${sources[$i]}"
+  target="${targets[$i]}"
+  if link_is_correct "$target" "$source"; then
+    :
+  elif [[ -e "$target" || -L "$target" ]]; then
+    printf 'COLISÃO: %s já existe e não aponta para %s\n' "$target" "$source" >&2
+    failures=1
+  else
+    missing=1
+  fi
 done
 
 if (( failures )); then
@@ -76,22 +93,20 @@ if [[ "$mode" == "--check" ]]; then
     printf 'PENDENTE: links ainda não instalados. Execute: %s --install\n' "$0"
     exit 1
   fi
-  printf 'OK: os %d links locais estão corretos.\n' $(( ${#skills[@]} * ${#destinations[@]} ))
+  printf 'OK: os %d links locais estão corretos.\n' "${#targets[@]}"
   exit 0
 fi
 
-for destination in "${destinations[@]}"; do
-  mkdir -p -- "$destination"
-  for skill in "${skills[@]}"; do
-    source="$repo_dir/$skill"
-    target="$destination/$skill"
-    if link_is_correct "$target" "$source"; then
-      printf 'OK: %s\n' "$target"
-    else
-      ln -s -- "$source" "$target"
-      printf 'CRIADO: %s -> %s\n' "$target" "$source"
-    fi
-  done
+for i in "${!targets[@]}"; do
+  source="${sources[$i]}"
+  target="${targets[$i]}"
+  mkdir -p -- "$(dirname -- "$target")"
+  if link_is_correct "$target" "$source"; then
+    printf 'OK: %s\n' "$target"
+  else
+    ln -s -- "$source" "$target"
+    printf 'CRIADO: %s -> %s\n' "$target" "$source"
+  fi
 done
 
-printf 'Concluído. Reinicie ou recarregue o agente para redescobrir as skills.\n'
+printf 'Concluído. Reinicie ou recarregue o agente para redescobrir skills e agentes.\n'
