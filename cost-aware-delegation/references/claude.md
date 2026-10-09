@@ -29,6 +29,7 @@ modelo na interface, e o frontmatter fixa modelo, esforço e ferramentas.
 | --- | --- | --- | --- |
 | `cheap_worker` (leitura) | `pesquisador-haiku` | haiku / low | não |
 | `cheap_worker` (escrita) | `executor-haiku` | haiku / low | sim |
+| `cheap_worker` (implementação com contrato fechado) | `implementador-haiku` | haiku / medium | sim |
 | `balanced_worker` (pesquisa) | `pesquisador-sonnet` | sonnet / medium | não |
 | `balanced_worker` | `implementador-sonnet` | sonnet / medium | sim |
 | `deep_worker` | `especialista-opus` | opus / high | sim |
@@ -38,6 +39,13 @@ modelo na interface, e o frontmatter fixa modelo, esforço e ferramentas.
   frontmatter). Para outro modelo, escolha outro agente; não sobrescreva, ou o
   nome exibido deixa de corresponder ao modelo.
 - Não envie `effort`: ele já vem do frontmatter.
+- **Haiku primeiro (experimental):** com o contrato fechado pelo principal,
+  comece por `implementador-haiku`. Use `implementador-sonnet` quando a tarefa
+  for ambígua, exigir decisão de design, ou quando o Haiku falhar a aceitação
+  após a rodada de correção. Registre a escalada e o motivo.
+- **Fatos separados da implementação:** dados factuais (status de conservação,
+  dados científicos, referências) vão para um `pesquisador-haiku` à parte, não
+  para o worker que escreve código ou arte.
 - Se os agentes não estiverem listados, use o mapeamento genérico abaixo.
 
 ## Mapeamento genérico de papéis
@@ -97,6 +105,28 @@ Exemplo de anúncio:
 Lançamentos em lote (`N background agents launched`) não mostram o modelo de
 cada tarefa: publique a tabela de transparência **antes** da chamada, com uma
 linha por tarefa, e não só um resumo posterior.
+
+## Agente principal em planos com limite
+
+O principal costuma rodar no modelo mais caro, então o trabalho feito por ele
+pesa mais na cota do que o mesmo trabalho num worker barato.
+
+- O principal escreve contratos, tipos compartilhados e integrações pequenas.
+  Reescrever um componente, gerar arte, corrigir ferramentas de teste ou
+  montar infraestrutura de verificação são execução: delegue.
+- Em planos com limite de sessão (ex.: Pro), sugira ao usuário, uma vez, rodar
+  o principal com esforço `medium` em vez de `high`/`xhigh`. Não mude o modelo
+  ou o esforço do principal por conta própria.
+- Conferência visual (abrir screenshots) também consome cota: confira por
+  amostra, não todas as imagens de todos os workers.
+
+## Registro para avaliação
+
+Ao concluir cada worker, registre numa linha: tarefa, `subagent_type`, modelo
+efetivo e fonte, tokens e duração (quando o runtime mostrar), rodadas de
+correção, escalada e se passou na aceitação. Ao final da sessão, apresente a
+tabela completa ao usuário. Isso permite comparar o custo por tarefa concluída
+entre Haiku e Sonnet.
 
 ## Limites da assinatura e concorrência
 

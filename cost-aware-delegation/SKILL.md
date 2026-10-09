@@ -15,7 +15,9 @@ Não converta preços de API em consumo da assinatura sem evidência do provedor
 Interprete intenção e restrições, resolva ambiguidades, decomponha, selecione
 modelos, integre evidências e decida sobre arquitetura, produto e segurança.
 Delegue trabalho substancial delimitado; execute diretamente ações triviais ou
-resolvidas por um comando. Não refaça por padrão toda a investigação do worker.
+resolvidas por um comando. Quando o principal roda no modelo mais caro, sua
+própria execução pesa mais na cota: fique com contratos e integração pequena e
+delegue reescritas, geração de conteúdo e infraestrutura de verificação. Não refaça por padrão toda a investigação do worker.
 Nenhum worker, mesmo mais forte, assume a decisão final.
 
 ## Preflight de capacidades e modelos
@@ -75,7 +77,11 @@ reinicie trabalho útil apenas para obter outro nome de modelo.
 | `exceptional_worker` | Consequência excepcional combinada com insuficiência ou falha material do nível profundo. |
 
 Escolha diretamente a menor capacidade adequada, não necessariamente a mais barata
-em todas as tarefas. Não percorra os quatro níveis em cascata. Use o menor esforço
+em todas as tarefas. Quando o nível barato custar uma fração do intermediário,
+comece por ele em implementação com contrato fechado, com esforço adequado, e
+escale só se falhar a aceitação após a rodada de correção ou se a tarefa for
+ambígua. Compare o custo por tarefa concluída, incluindo retrabalho, não por
+chamada. Separe a pesquisa de fatos da implementação. Não percorra os quatro níveis em cascata. Use o menor esforço
 suportado adequado à subtarefa; não herde esforço alto por omissão quando for
 possível selecionar explicitamente. Uma tarefa grande não exige modelo profundo
 se puder ser decomposta em trabalhos simples. Não envie requisitos ambíguos ou

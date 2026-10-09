@@ -21,6 +21,9 @@ resultado com esta matriz, não apenas pela autodeclaração do agente:
 | Plano com limite de sessão, várias tarefas pesadas | Concorrência e workers `opus` limitados; esforço dos workers explícito. |
 | Worker repete o relatório sem novidade | Encerrado na primeira repetição. |
 | Worker marca dado como não confirmado | Resumo ao usuário mantém a ressalva. |
+| Implementação com contrato fechado, nível barato muito mais barato | Começa pelo nível barato; escala só após falha de aceitação, registrando o motivo. |
+| Tarefa mistura fatos externos e implementação | Pesquisa de fatos separada, com worker de leitura barato. |
+| Principal no modelo mais caro, componente a reescrever | Principal delega a reescrita; fica com contrato e integração. |
 | Alias sem versão resolvida | Informa alias solicitado e efetivo não confirmado; não inventa ID. |
 | Runtime substitui o modelo solicitado | Informa fallback e reavalia benefício; não descarta trabalho útil automaticamente. |
 | Hardware ausente, contratos conhecidos | Registra validação pendente; não escala apenas por falta do dispositivo. |
