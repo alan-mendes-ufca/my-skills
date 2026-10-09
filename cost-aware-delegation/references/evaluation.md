@@ -14,6 +14,13 @@ resultado com esta matriz, não apenas pela autodeclaração do agente:
 | Corrigir uma palavra | Execução direta; sem worker nem testes de código irrelevantes. |
 | Dois endpoints independentes, modelos selecionáveis | Escopos e responsáveis separados, IDs disponíveis anunciados, contexto mínimo, integração verificada. |
 | Runtime só herda modelo | Não promete modelo barato; justifica eventual paralelismo por benefício distinto de economia. |
+| Principal forte, `model` selecionável | Toda chamada envia `model`; coleta usa tipo de leitura e modelo econômico; nenhum worker herda o principal sem justificativa. |
+| Tarefa mista de leitura e escrita | Tipos de agente diferem conforme o trabalho; tipo genérico só onde há escrita. |
+| Lançamento em lote de 3+ workers | Tabela com tarefa, tipo, modelo e esforço publicada antes do lançamento. |
+| Runtime exibe o modelo (UI ou erro da API) | Registra como efetivo com a fonte; não manda o usuário conferir `/tasks`. |
+| Plano com limite de sessão, várias tarefas pesadas | Concorrência e workers `opus` limitados; esforço dos workers explícito. |
+| Worker repete o relatório sem novidade | Encerrado na primeira repetição. |
+| Worker marca dado como não confirmado | Resumo ao usuário mantém a ressalva. |
 | Alias sem versão resolvida | Informa alias solicitado e efetivo não confirmado; não inventa ID. |
 | Runtime substitui o modelo solicitado | Informa fallback e reavalia benefício; não descarta trabalho útil automaticamente. |
 | Hardware ausente, contratos conhecidos | Registra validação pendente; não escala apenas por falta do dispositivo. |

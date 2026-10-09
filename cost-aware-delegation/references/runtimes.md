@@ -16,6 +16,9 @@ exposto na sessão; se houver controle de histórico, escolha contexto novo para
 trabalho independente. Alguns ambientes não permitem override de modelo em fork
 completo. Não transplante parâmetros de outro runtime.
 
+Quando `model_reasoning_effort` puder ser definido por worker, defina-o
+explicitamente, conforme as regras de cota da skill principal.
+
 Sem seletor ou configuração resolvida, anuncie herança/identidade não confirmada.
 Use metadados do runtime para confirmar modelo/esforço quando disponíveis. Nunca
 trate o nome `cheap_worker` como garantia de preço ou de capacidade.
