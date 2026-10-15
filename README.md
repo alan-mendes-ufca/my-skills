@@ -13,7 +13,7 @@ próprio `SKILL.md`.
 | `verification-planning` | Planejar evidências e validações proporcionais a uma mudança. |
 | `post-refactor` | Examinar um trecho refatorado em busca de regressões. |
 | `security-audit` | Estruturar auditorias de segurança com escopo explícito. |
-| `cost-aware-delegation` | Orquestrar com modelos identificados, contexto mínimo, orçamento de delegação e gates de risco. |
+| `cost-aware-delegation` | Orquestrar com modelos identificados, contexto mínimo, divisão de papéis (principal planeja, subagentes executam) e revisão concorrente em risco alto. |
 | `antigravity-reviewer` | Pedir uma segunda opinião sobre implementação ou diff relevante. |
 | `antigravity-debugger` | Pedir revisão de uma investigação difícil de falha. |
 | `antigravity-security` | Pedir revisão adversarial de limites de confiança e segurança. |
@@ -73,8 +73,8 @@ pode selecionar uma skill pela descrição em seu `SKILL.md`.
 
 ## Delegação e verificação
 
-A `cost-aware-delegation` informa o modelo solicitado por tarefa e distingue o
-modelo efetivo confirmado do desconhecido. Os quatro papéis são níveis de
+A `cost-aware-delegation` informa o modelo solicitado por tarefa e avisa quando o
+runtime mostrar outro. Os quatro papéis são níveis de
 trabalho, não configurações instaladas de modelos. O agente consulta as capacidades
 da sessão; a skill não altera o modelo principal nem cria workers no provedor.
 
@@ -89,7 +89,7 @@ papel, modelo, esforço e ferramentas fixos no frontmatter:
 | `pesquisador-sonnet` | Pesquisa com síntese de fontes | sonnet / medium | não |
 | `implementador-sonnet` | Implementação moderada | sonnet / medium | sim |
 | `especialista-opus` | Problema difícil e isolado | opus / high | sim |
-| `revisor-opus` | Revisão independente exigida por gate | opus / high | não |
+| `revisor-opus` | Revisão independente concorrente de plano ou diff | opus / high | não |
 
 O nome do agente aparece na interface no lugar de `general-purpose`.
 
@@ -109,8 +109,7 @@ de um projeto):
 
 O instalador não altera esse arquivo.
 
-O orçamento inicial é ajustável (2 workers simultâneos, 3 inicializações e uma
-rodada de correção por subtarefa). A economia depende do consumo total e da
+A economia depende do consumo total e da
 qualidade; sem medição, deve ser declarada como não medida. Consulte o
 [protocolo de avaliação](cost-aware-delegation/references/evaluation.md) para
 comparar a política com execução direta.
