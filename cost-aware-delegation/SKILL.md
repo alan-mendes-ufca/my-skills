@@ -40,7 +40,8 @@ ou segurança fica com o principal.
 
 ### 3. Anuncie
 
-Antes de cada delegação, uma linha:
+Antes de cada delegação, uma linha, no texto da mesma resposta e antes da
+chamada. Para vários workers, uma linha por worker, todas antes do lançamento:
 
 `Tarefa → modelo: <ID ou alias real> → motivo`
 
