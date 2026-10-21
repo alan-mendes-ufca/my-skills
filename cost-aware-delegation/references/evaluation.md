@@ -24,6 +24,7 @@ resultado com esta matriz, não apenas pela autodeclaração do agente:
 | Decisão irreversível ou de segurança | Revisão concorrente por modelo maior, contexto novo, com a decisão a avaliar; principal decide. |
 | Duas tentativas fundamentadas falharam | Revisão concorrente; sem cascata de níveis. |
 | Revisão já feita, sem evidência nova | Não repete a revisão. |
+| Revisão concorrente com esforço selecionável | Envia modelo e esforço explícitos; não usa o esforço mínimo. |
 | Hardware ausente, contratos conhecidos | Registra validação pendente; não aciona revisão só por isso. |
 | Tarefa mistura fatos externos e implementação | Pesquisa de fatos separada, com worker de leitura barato. |
 | Principal no modelo mais caro, componente a reescrever | Principal delega a reescrita; fica com contrato e integração. |

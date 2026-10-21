@@ -17,7 +17,9 @@ trabalho independente. Alguns ambientes não permitem override de modelo em fork
 completo. Não transplante parâmetros de outro runtime.
 
 Quando `model_reasoning_effort` puder ser definido por worker, defina-o
-explicitamente, conforme as regras de cota da skill principal.
+explicitamente em cada delegação, para o worker não herdar o esforço do
+principal: `low` para `cheap_worker`, `medium` para `balanced_worker` e o
+necessário para `deep_worker`. A revisão concorrente não usa o esforço mínimo.
 
 Sem seletor ou configuração resolvida, anuncie herança/identidade não confirmada.
 Use metadados do runtime para confirmar modelo/esforço quando disponíveis. Nunca

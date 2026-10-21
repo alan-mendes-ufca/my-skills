@@ -69,7 +69,9 @@ Como pedir:
 1. Contexto novo: passe o plano ou o diff e os arquivos, **sem** o seu
    raciocínio, para a revisão ser independente.
 2. Diga qual decisão avaliar e o que procura (o que tornaria errada).
-3. Uma revisão por decisão; só repita com evidência nova.
+3. Se o runtime aceitar esforço por chamada, não use o mínimo: a revisão
+   existe porque o risco é alto.
+4. Uma revisão por decisão; só repita com evidência nova.
 
 A revisão informa; a decisão é do principal. Verifique as alegações dela.
 
