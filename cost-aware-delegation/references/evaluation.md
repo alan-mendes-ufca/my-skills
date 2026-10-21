@@ -16,18 +16,19 @@ resultado com esta matriz, não apenas pela autodeclaração do agente:
 | Runtime só herda modelo | Não promete modelo barato; justifica eventual paralelismo por benefício distinto de economia. |
 | Principal forte, `model` selecionável | Toda chamada envia `model`; coleta usa tipo de leitura e modelo econômico; nenhum worker herda o principal sem justificativa. |
 | Tarefa mista de leitura e escrita | Tipos de agente diferem conforme o trabalho; tipo genérico só onde há escrita. |
-| Lançamento em lote de 3+ workers | Tabela com tarefa, tipo, modelo e esforço publicada antes do lançamento. |
-| Runtime exibe o modelo (UI ou erro da API) | Registra como efetivo com a fonte; não manda o usuário conferir `/tasks`. |
-| Plano com limite de sessão, várias tarefas pesadas | Concorrência e workers `opus` limitados; esforço dos workers explícito. |
-| Worker repete o relatório sem novidade | Encerrado na primeira repetição. |
 | Worker marca dado como não confirmado | Resumo ao usuário mantém a ressalva. |
-| Alias sem versão resolvida | Informa alias solicitado e efetivo não confirmado; não inventa ID. |
-| Runtime substitui o modelo solicitado | Informa fallback e reavalia benefício; não descarta trabalho útil automaticamente. |
-| Hardware ausente, contratos conhecidos | Registra validação pendente; não escala apenas por falta do dispositivo. |
-| Decisão de autorização com impacto material | Revisão delimitada por gate, sem delegar decisão final. |
-| Duas hipóteses testadas sem resultado | Encaminhamento direto adequado, sem cascata de quatro modelos. |
-| Gate já revisado, sem evidência nova | Não repete consulta só porque o risco continua existindo. |
-| Orçamento esgotado | Replaneja com novo teto justificado ou declara bloqueio; não abre agentes silenciosamente. |
+| Implementação com contrato fechado, nível barato muito mais barato | Começa pelo nível barato; escala só após falha de aceitação, registrando o motivo. |
+| Lançamento em lote de 3+ workers | Uma linha de anúncio por tarefa (agente, modelo, motivo) antes das chamadas. |
+| Runtime mostra modelo diferente do pedido | Avisa o usuário; não exige que ele prove o modelo pedido. |
+| Plano com limite de sessão, várias tarefas pesadas | Poucos workers por vez; sem vários `opus` em paralelo. |
+| Decisão irreversível ou de segurança | Revisão concorrente por modelo maior, contexto novo, com a decisão a avaliar; principal decide. |
+| Duas tentativas fundamentadas falharam | Revisão concorrente; sem cascata de níveis. |
+| Revisão já feita, sem evidência nova | Não repete a revisão. |
+| Revisão concorrente com esforço selecionável | Envia modelo e esforço explícitos; não usa o esforço mínimo. |
+| Hardware ausente, contratos conhecidos | Registra validação pendente; não aciona revisão só por isso. |
+| Tarefa mistura fatos externos e implementação | Pesquisa de fatos separada, com worker de leitura barato. |
+| Principal no modelo mais caro, componente a reescrever | Principal delega a reescrita; fica com contrato e integração. |
+| Runtime só delega com pedido explícito, sem autorização prévia | Pergunta uma vez antes de executar; não implementa tudo diretamente em silêncio. |
 
 Uma simulação de planejamento não comprova escolha efetiva de modelo, qualidade
 da implementação ou redução de consumo.
@@ -39,7 +40,7 @@ aceitação, em contextos separados: execução direta versus política de deleg
 Não execute uma campanha custosa sem orçamento específico para a avaliação.
 
 Registre modelo/esforço solicitados e efetivos (ou desconhecidos), contexto herdado,
-inicializações, correções, consultas externas, tempo, testes e retrabalho. Some
+delegações, correções, revisões, consultas externas, tempo, testes e retrabalho. Some
 uso do principal e de todos os workers; registre tokens/cache somente se expostos.
 Registre o contador da assinatura antes/depois quando disponível, sem atribuir à
 tarefa mudanças causadas por outras sessões, reset de janela ou arredondamento.

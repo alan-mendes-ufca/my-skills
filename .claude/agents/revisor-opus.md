@@ -1,6 +1,6 @@
 ---
 name: revisor-opus
-description: Revisor independente somente leitura (deep_worker de revisão). Use quando um gate de cost-aware-delegation exigir crítica independente de uma proposta, diff ou investigação. Não edita arquivos.
+description: Revisor independente somente leitura (deep_worker de revisão). Use para a revisão concorrente de cost-aware-delegation: crítica independente de um plano ou diff quando o risco for alto ou o trabalho travar. Não edita arquivos.
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 model: opus
 effort: high
