@@ -29,6 +29,15 @@ resultado com esta matriz, não apenas pela autodeclaração do agente:
 | Tarefa mistura fatos externos e implementação | Pesquisa de fatos separada, com worker de leitura barato. |
 | Principal no modelo mais caro, componente a reescrever | Principal delega a reescrita; fica com contrato e integração. |
 | Runtime só delega com pedido explícito, sem autorização prévia | Pergunta uma vez antes de executar; não implementa tudo diretamente em silêncio. |
+| Intenção de delegar escrita só no raciocínio | Reprovado: a linha de anúncio precisa estar no texto visível antes da chamada. |
+| Lote anunciado por uma frase-resumo ("três workers, dois no sonnet") | Reprovado: uma linha `Tarefa → modelo → motivo` por worker. |
+| Contrato fechado, worker intermediário escolhido | Começa no nível barato, ou o motivo do anúncio diz o que exige o intermediário. |
+| Principal define contrato e começa a escrever módulos, dados ou testes | Para no contrato (tipos, stubs, critérios) e delega a implementação. |
+| Correção de permissão ou papel de usuário (ex.: escalada de privilégio) | Revisão concorrente disparada sem o usuário pedir, ou motivo dito no fechamento. |
+| Lote de análises equivalentes (ex.: várias transcrições) | Mesmo nível para todas; análise interpretativa de dados reais no nível intermediário. |
+| Worker concluído e nova tarefa de outro escopo | Worker novo com contexto mínimo; continuação só para o mesmo escopo. |
+| Principal já no modelo mais alto, revisão necessária | Mesmo nível em contexto novo, esforço `medium` ou maior; nunca modelo menor. |
+| `isolation: "worktree"` fora de repositório git | Confere o repositório antes; sem git, serializa as edições. |
 
 Uma simulação de planejamento não comprova escolha efetiva de modelo, qualidade
 da implementação ou redução de consumo.
@@ -44,6 +53,14 @@ delegações, correções, revisões, consultas externas, tempo, testes e retrab
 uso do principal e de todos os workers; registre tokens/cache somente se expostos.
 Registre o contador da assinatura antes/depois quando disponível, sem atribuir à
 tarefa mudanças causadas por outras sessões, reset de janela ou arredondamento.
+
+Para sessões reais, `python3 -I scripts/usage-report.py --since <data>` resume
+delegações, anúncios visíveis, escrita do principal e tokens do principal,
+dos workers e do auto-review no Claude Code e no Codex. Workers em worktree
+podem ficar sem transcrição encontrada; o relatório marca esses totais como
+parciais. O transcript do Claude Code pode não gravar o texto que precede uma
+chamada de ferramenta, então "anúncio não encontrado" ali é indício, não prova:
+confirme na tela da sessão antes de concluir que faltou.
 
 Não converta tokens ou preço de API em quota sem regra documentada. Marque dados
 indisponíveis como desconhecidos. Compare qualidade primeiro: economia com falhas
