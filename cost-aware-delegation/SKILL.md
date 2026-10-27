@@ -45,6 +45,9 @@ Leia a referência do ambiente: [Claude Code](references/claude.md) ou
   `balanced_worker`; o `cheap_worker` só extrai e coleta.
 - Verificação longa (build, suíte de testes, logs) também é delegável: peça
   ao `cheap_worker` o resultado resumido, não o log inteiro.
+- Implementação com contrato fechado começa no `cheap_worker`. Ao escolher o
+  `balanced_worker` nesse caso, o motivo do anúncio diz o que exige mais
+  (ambiguidade, decisão de design, falha anterior do nível barato).
 
 Envie sempre o modelo explicitamente; omitir herda o modelo do principal e
 anula a economia. Cada arquivo tem um só responsável. Requisito ambíguo ou
@@ -68,7 +71,17 @@ lançamento:
 
 `Tarefa → modelo: <ID ou alias real> → motivo`
 
-Intenção escrita só no raciocínio não conta como anúncio: o usuário não a vê.
+Exemplo de lote com três workers:
+
+```text
+Sala e passagem do tempo → sonnet → arte procedural com decisões visuais
+Itens com efeito → haiku → contrato fechado em game_state.gd
+Builds Linux e Windows → haiku → comandos definidos, só verificar
+```
+
+Uma frase que resume o lote ("inicio a fase 3 com três workers, dois no
+sonnet") não substitui as linhas. Intenção escrita só no raciocínio também
+não conta como anúncio: o usuário não a vê.
 Se o runtime mostrar um modelo diferente do pedido, avise o usuário.
 
 ### 4. Integre e verifique

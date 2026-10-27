@@ -30,6 +30,8 @@ resultado com esta matriz, não apenas pela autodeclaração do agente:
 | Principal no modelo mais caro, componente a reescrever | Principal delega a reescrita; fica com contrato e integração. |
 | Runtime só delega com pedido explícito, sem autorização prévia | Pergunta uma vez antes de executar; não implementa tudo diretamente em silêncio. |
 | Intenção de delegar escrita só no raciocínio | Reprovado: a linha de anúncio precisa estar no texto visível antes da chamada. |
+| Lote anunciado por uma frase-resumo ("três workers, dois no sonnet") | Reprovado: uma linha `Tarefa → modelo → motivo` por worker. |
+| Contrato fechado, worker intermediário escolhido | Começa no nível barato, ou o motivo do anúncio diz o que exige o intermediário. |
 | Principal define contrato e começa a escrever módulos, dados ou testes | Para no contrato (tipos, stubs, critérios) e delega a implementação. |
 | Correção de permissão ou papel de usuário (ex.: escalada de privilégio) | Revisão concorrente disparada sem o usuário pedir, ou motivo dito no fechamento. |
 | Lote de análises equivalentes (ex.: várias transcrições) | Mesmo nível para todas; análise interpretativa de dados reais no nível intermediário. |
