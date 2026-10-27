@@ -15,7 +15,10 @@ Esta referência não garante aliases, modelos ou recursos em todas as versões.
    parâmetro cai em `general-purpose`. Use `general-purpose` apenas quando o
    worker precisar editar arquivos ou executar comandos com efeito.
 3. **Publique a linha de anúncio da skill antes de cada chamada**, com o
-   `subagent_type` e o alias enviado em `model` (ex.: `sonnet`).
+   `subagent_type` e o alias enviado em `model` (ex.: `sonnet`). Ela vai num
+   bloco de texto da resposta, antes do bloco `tool_use`. O raciocínio
+   (thinking) fica recolhido no CLI: anúncio escrito só ali não conta. Uma
+   resposta que contém `Agent` sem texto visível antes está incompleta.
 4. Ter `model` no schema significa que a seleção existe: não trate a sessão
    como "só herança" nem execute tudo diretamente por esse motivo.
 
@@ -63,6 +66,9 @@ modelo na interface, e o frontmatter fixa modelo, esforço e ferramentas.
 
 Para a **revisão concorrente** da skill, use `revisor-opus` em contexto novo:
 plano ou diff e arquivos, sem o raciocínio do principal, e a decisão a avaliar.
+Com o principal em Opus, `revisor-opus` é o "mesmo nível em contexto novo" da
+skill. Lance-o sem esperar o usuário pedir sempre que o diff tocar
+autenticação, papéis, permissões, credenciais ou dados reais.
 
 ## Mapeamento genérico de papéis
 
@@ -109,7 +115,18 @@ Exemplo de anúncio:
 `Mapear handlers de auth → pesquisador-haiku (haiku) → coleta delimitada`
 
 Em lançamentos em lote, publique uma linha por tarefa no texto da mesma
-resposta, antes das chamadas `Agent`.
+resposta, antes das chamadas `Agent`. Uma frase que resume o lote ("disparo
+três implementações em paralelo") não substitui as linhas:
+
+```text
+Motor de downloads → implementador-sonnet (sonnet) → fila com concorrência e retomada
+Interface Compose → implementador-sonnet (sonnet) → telas sobre contrato fechado, com estado
+Lógica pura e testes → implementador-haiku (haiku) → contrato e fixtures prontos
+```
+
+Para dizer ao usuário qual versão rodou, leia o `model` das mensagens do
+worker em `~/.claude/projects/<projeto>/<sessão>/subagents/`; sem isso, diga
+que a versão exata não foi confirmada.
 
 ## Principal em planos com limite
 
@@ -139,7 +156,12 @@ recriá-lo. Evite polling frequente.
 
 Se houver `isolation: "worktree"`, ele pode separar escritas do repositório, mas
 não elimina conflitos de integração nem isola serviços externos compartilhados.
-Sem isolamento, serialize edições sobrepostas.
+Ele exige repositório git (ou hooks `WorktreeCreate`): confira com
+`git rev-parse --is-inside-work-tree` antes de pedir. Sem isolamento,
+serialize edições sobrepostas.
+
+Continue um worker com `SendMessage` só para corrigir o mesmo escopo; escopo
+novo pede `Agent` novo.
 
 Consultas `antigravity-*` seguem a política de revisões externas da skill principal;
 não são uma família Claude nem um fallback silencioso quando `Agent` falta.
