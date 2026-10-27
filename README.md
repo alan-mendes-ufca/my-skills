@@ -112,7 +112,12 @@ O instalador não altera esse arquivo.
 A economia depende do consumo total e da
 qualidade; sem medição, deve ser declarada como não medida. Consulte o
 [protocolo de avaliação](cost-aware-delegation/references/evaluation.md) para
-comparar a política com execução direta.
+comparar a política com execução direta. Para resumir o uso real nas sessões
+locais do Claude Code e do Codex:
+
+```bash
+python3 -I cost-aware-delegation/scripts/usage-report.py --since 2026-10-15
+```
 
 As regressões do helper não precisam de credenciais:
 
