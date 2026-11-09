@@ -85,11 +85,12 @@ papel, modelo, esforço e ferramentas fixos no frontmatter:
 | --- | --- | --- | --- |
 | `pesquisador-haiku` | Coleta e busca delimitadas | haiku / low | não |
 | `executor-haiku` | Edições especificadas e verificações definidas | haiku / low | sim |
-| `implementador-haiku` | Implementação com contrato fechado (primeira escolha, experimental) | haiku / medium | sim |
+| `implementador-haiku` | Implementação curta, com contrato fechado e resultado conferível por comando | haiku / medium | sim |
 | `pesquisador-sonnet` | Pesquisa com síntese de fontes | sonnet / medium | não |
 | `implementador-sonnet` | Implementação moderada | sonnet / medium | sim |
 | `especialista-opus` | Problema difícil e isolado | opus / high | sim |
 | `revisor-opus` | Revisão independente concorrente de plano ou diff | opus / high | não |
+| `revisor-fable` | A mesma revisão, quando o principal roda em Fable | fable / high | não |
 
 O nome do agente aparece na interface no lugar de `general-purpose`.
 

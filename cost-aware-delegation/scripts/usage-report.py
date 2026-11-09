@@ -26,6 +26,12 @@ SKILL = "cost-aware-delegation"
 REVIEWER_MODEL = "codex-auto-review"
 WRITE_TOOLS = ("Edit", "Write", "MultiEdit")
 
+# Limiares dos indicios (heuristicas, nao provas).
+CHEAP_LOOP_TURNS = 60
+HAIKU_LONG_PROMPT_TOKENS = 100_000
+ACTIVE_WAIT_CALLS = 5
+CHEAP_MODEL_MARKS = ("haiku", "luna")
+
 
 def load(path):
     rows = []
@@ -69,7 +75,8 @@ def text_of(content):
     return "\n".join(parts)
 
 
-def claude_usage(rows):
+def claude_messages(rows):
+    """Mensagens de assistente unicas por id: (modelo, saida, entrada)."""
     seen = {}
     for row in rows:
         if row.get("type") != "assistant":
@@ -84,13 +91,43 @@ def claude_usage(rows):
                 "input_tokens", "cache_read_input_tokens",
                 "cache_creation_input_tokens")),
         )
+    return list(seen.values())
+
+
+def claude_usage(rows):
     agg = {}
-    for model, out, inp in seen.values():
+    for model, out, inp in claude_messages(rows):
         a = agg.setdefault(model, {"messages": 0, "output": 0, "input": 0})
         a["messages"] += 1
         a["output"] += out
         a["input"] += inp
     return agg
+
+
+def worker_stats(path, rows, main_agent_ids):
+    msgs = claude_messages(rows)
+    models = collections.Counter(m for m, _, _ in msgs)
+    meta = {}
+    try:
+        with open(path.with_name(path.stem + ".meta.json"), encoding="utf-8") as fh:
+            meta = json.load(fh)
+    except (OSError, ValueError):
+        pass
+    if not isinstance(meta, dict):
+        meta = {}
+    tool_id = meta.get("toolUseId")
+    kind = meta.get("agentType")
+    if meta.get("isBuiltIn") and meta.get("name"):
+        kind = meta["name"]
+    return {
+        "type": kind or "tipo desconhecido",
+        "model": models.most_common(1)[0][0] if models else "?",
+        "turns": len(msgs),
+        "output": sum(o for _, o, _ in msgs),
+        "input": sum(i for _, _, i in msgs),
+        "max_context": max((i for _, _, i in msgs), default=0),
+        "skill": not (tool_id and tool_id in main_agent_ids),
+    }
 
 
 def merge_usage(into, other):
@@ -100,13 +137,16 @@ def merge_usage(into, other):
             a[k] += v[k]
 
 
-def claude_session(path, root):
+def claude_session(path, copies=None):
+    copies = copies or [path]
     rows = load(path)
     used = False
     start = cwd = None
     delegations = []
     pending = []
     writes = {"calls": 0, "lines": 0}
+    agent_ids = set()
+    bash_ids = set()
     for row in rows:
         start = start or row.get("timestamp")
         cwd = cwd or row.get("cwd")
@@ -134,6 +174,7 @@ def claude_session(path, root):
                     if name == "Skill" and inp.get("skill") == SKILL:
                         used = True
                     elif name in ("Agent", "Task"):
+                        agent_ids.add(block.get("id"))
                         delegations.append({
                             "agent": inp.get("subagent_type"),
                             "model": inp.get("model"),
@@ -143,29 +184,70 @@ def claude_session(path, root):
                             "announced": announced(
                                 pending, [inp.get("model"), inp.get("subagent_type")]),
                         })
+                    elif name == "Bash":
+                        bash_ids.add(block.get("id") or id(block))
                     elif name in WRITE_TOOLS:
                         writes["calls"] += 1
                         writes["lines"] += written_lines(name, inp)
     if not used:
         return None
     sid = path.stem
-    sub_files = sorted(root.glob("*/%s/subagents/*.jsonl" % sid))
+    sub_files = {}
+    for c in copies:
+        for f in c.parent.glob("%s/subagents/agent-*.jsonl" % sid):
+            sub_files.setdefault(f.name, []).append(f)
     workers = {}
-    for f in sub_files:
-        merge_usage(workers, claude_usage(load(f)))
+    worker_list = []
+    for name, fs in sorted(sub_files.items()):
+        loaded = [(f, load(f)) for f in fs]
+        f, wrows = max(loaded, key=lambda x: len(x[1]))
+        merge_usage(workers, claude_usage(wrows))
+        worker_list.append(worker_stats(f, wrows, agent_ids))
     worktree = sum(1 for d in delegations if d["isolation"] == "worktree")
     partial = worktree > 0 and len(sub_files) < len(delegations)
-    return {
+    main_usage = claude_usage(rows)
+    main_turns = sum(v["messages"] for v in main_usage.values())
+    main_in = sum(v["input"] for v in main_usage.values())
+    workers_in = sum(v["input"] for v in workers.values())
+    res = {
         "runtime": "claude",
         "start": start,
         "project": cwd or path.parent.name,
         "session": sid[:8],
+        "copies": len(copies),
         "delegations": delegations,
         "announced": sum(d["announced"] for d in delegations),
-        "tokens": {"main": claude_usage(rows), "workers": workers,
+        "tokens": {"main": main_usage, "workers": workers,
                    "workers_partial": partial, "worker_files": len(sub_files)},
+        "worker_list": worker_list,
         "main_writes": writes,
+        "main_turns": main_turns,
+        "main_bash_calls": len(bash_ids),
+        "input_ratio": round(main_in / workers_in, 2) if workers_in else None,
     }
+    res["hints"] = claude_hints(res, main_in, workers_in)
+    return res
+
+
+def is_cheap(model):
+    return any(m in (model or "").lower() for m in CHEAP_MODEL_MARKS)
+
+
+def claude_hints(res, main_in, workers_in):
+    hints = []
+    for w in res["worker_list"]:
+        if is_cheap(w["model"]) and w["turns"] > CHEAP_LOOP_TURNS:
+            hints.append("indicio de laco longo em modelo barato: worker %s (%s) "
+                         "com %d turnos (> %d)" % (
+                             w["type"], w["model"], w["turns"], CHEAP_LOOP_TURNS))
+        if "haiku" in w["model"].lower() and w["max_context"] > HAIKU_LONG_PROMPT_TOKENS:
+            hints.append("indicio de contexto grande em haiku: worker %s com %d "
+                         "tokens em uma mensagem (> %d)" % (
+                             w["type"], w["max_context"], HAIKU_LONG_PROMPT_TOKENS))
+    if res["delegations"] and main_in > workers_in:
+        hints.append("indicio de principal pesado: entrada do principal %d > "
+                     "entrada dos workers %d" % (main_in, workers_in))
+    return hints
 
 
 def written_lines(name, inp):
@@ -178,11 +260,15 @@ def written_lines(name, inp):
 
 
 def claude_sessions(root):
+    by_id = collections.defaultdict(list)
     for path in sorted(root.glob("*/*.jsonl")):
+        by_id[path.stem].append(path)
+    for sid, paths in sorted(by_id.items()):
         try:
-            res = claude_session(path, root)
+            best = max(paths, key=lambda p: len(load(p)))
+            res = claude_session(best, paths)
         except Exception as exc:  # log mal formado nao deve derrubar o relatorio
-            print("aviso: %s: %s" % (path.name, exc), file=sys.stderr)
+            print("aviso: %s: %s" % (sid, exc), file=sys.stderr)
             continue
         if res:
             yield res
@@ -199,7 +285,7 @@ def codex_parse(path):
          "start": meta.get("timestamp") or rows[0].get("timestamp"),
          "parent": meta.get("parent_thread_id"), "nick": meta.get("agent_nickname"),
          "model": None, "effort": None, "tokens": {}, "used": False,
-         "delegations": []}
+         "delegations": [], "calls": collections.Counter()}
     pending = []
     for row in rows:
         p = row.get("payload") or {}
@@ -226,6 +312,8 @@ def codex_parse(path):
             raw = p.get("arguments") or p.get("input") or ""
             if not isinstance(raw, str):
                 raw = json.dumps(raw)
+            if ptype == "function_call" and p.get("name"):
+                s["calls"][p["name"]] += 1
             if SKILL + "/SKILL.md" in raw:
                 s["used"] = True
             if p.get("name") in ("spawn_agent", "followup_task"):
@@ -266,6 +354,11 @@ def codex_sessions(root):
         reviewers = [c for c in children if c["model"] == REVIEWER_MODEL]
         followups = collections.Counter(
             d["agent"] for d in s["delegations"] if d["kind"] == "followup")
+        sleeps, waits = s["calls"]["sleep"], s["calls"]["wait_agent"]
+        hints = []
+        if sleeps > ACTIVE_WAIT_CALLS:
+            hints.append("indicio de espera ativa: principal chamou sleep %d vezes "
+                         "(> %d) e wait_agent %d vezes" % (sleeps, ACTIVE_WAIT_CALLS, waits))
         yield {
             "runtime": "codex",
             "start": s["start"],
@@ -275,6 +368,9 @@ def codex_sessions(root):
             "delegations": s["delegations"],
             "announced": sum(d["announced"] for d in s["delegations"]),
             "followups_per_worker": dict(followups),
+            "sleep_calls": sleeps,
+            "wait_agent_calls": waits,
+            "hints": hints,
             "tokens": {"main": codex_tokens([s]), "workers": codex_tokens(workers),
                        "auto_review": codex_tokens(reviewers),
                        "worker_count": len(workers), "review_count": len(reviewers)},
@@ -314,6 +410,8 @@ def fmt_usage(usage):
 def render(s):
     lines = ["%s  %s  %s  [%s]" % (s["runtime"], (s["start"] or "?")[:19],
                                    s["project"], s["session"])]
+    if s.get("copies", 1) > 1:
+        lines[0] += " (%d copias)" % s["copies"]
     n = len(s["delegations"])
     lines.append("  delegacoes: %d  anuncios encontrados: %d/%d" % (n, s["announced"], n))
     for d in s["delegations"]:
@@ -329,6 +427,14 @@ def render(s):
         lines.append("  tokens workers: %s%s" % (fmt_usage(t["workers"]), mark))
         w = s["main_writes"]
         lines.append("  escritas da main: %d chamadas, %d linhas" % (w["calls"], w["lines"]))
+        ratio = ("  razao entrada principal/workers: %.2f" % s["input_ratio"]
+                 if s["input_ratio"] is not None else "")
+        lines.append("  principal: %d turnos, %d chamadas Bash%s" % (
+            s["main_turns"], s["main_bash_calls"], ratio))
+        for wk in s["worker_list"]:
+            lines.append("    worker %s%s model=%s turnos=%d out=%d in=%d" % (
+                wk["type"], " (skill)" if wk["skill"] else "", wk["model"],
+                wk["turns"], wk["output"], wk["input"]))
     else:
         for label, key in (("main", "main"), ("workers", "workers"),
                            ("auto-review", "auto_review")):
@@ -337,6 +443,11 @@ def render(s):
         if s["followups_per_worker"]:
             lines.append("  followups por worker: " + ", ".join(
                 "%s=%d" % kv for kv in sorted(s["followups_per_worker"].items())))
+        lines.append("  chamadas do principal: sleep=%d wait_agent=%d" % (
+            s["sleep_calls"], s["wait_agent_calls"]))
+    if s.get("hints"):
+        lines.append("  indicios:")
+        lines += ["    - " + h for h in s["hints"]]
     return "\n".join(lines)
 
 

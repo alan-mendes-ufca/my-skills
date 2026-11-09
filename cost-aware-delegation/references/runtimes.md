@@ -45,6 +45,13 @@ siga a instrução do usuário e avise da divergência.
   de custo sem custo relativo conhecido; registre o motivo se usar.
 - A revisão concorrente não vai para um modelo abaixo do principal: com o
   principal em Sol, use Sol em contexto novo (`fork_turns: "none"`).
+- **Escada de escalada**, um degrau por vez: (1) acrescente ao prompt o comando
+  de verificação; (2) suba o esforço um nível (`gpt-6-luna` de `low` para
+  `medium`); (3) suba o modelo começando no esforço mais baixo (`gpt-6.1-terra`
+  em `low`).
+- `default_subagent_model` em `~/.codex/config.toml` pode apontar para um modelo
+  de geração anterior (ex.: `gpt-5.6-luna`). Envie `model` explícito em todo
+  `spawn_agent` e avise o usuário da divergência uma vez.
 
 ### Workers e `followup_task`
 
@@ -59,12 +66,20 @@ siga a instrução do usuário e avise da divergência.
   escopo.
 - Uma linha de anúncio também antes de cada `followup_task` que muda o
   objetivo; o modelo do worker não muda no followup.
+- Um worker de monitoramento recebe uma tarefa única com condição de parada
+  (evento esperado, tempo máximo, o que relatar). Vários `followup_task` de
+  "continue monitorando" no mesmo worker indicam que faltou essa condição;
+  numa sessão medida houve quatro.
 
 ### Consumo do principal
 
 No Codex, o principal costuma somar várias vezes os tokens dos workers,
 porque relê o contexto inteiro a cada turno. Para reduzir:
 
+- não espere workers com `sleep` em laço no principal. Numa sessão medida foram
+  65 chamadas `sleep`, e o principal somou 3,6 vezes os tokens dos workers. Use
+  uma única espera pelo mecanismo do runtime (`wait_agent`) ou encerre o turno
+  e retome quando o worker terminar.
 - delegue builds, testes e leitura de logs longos a um `cheap_worker` com
   retorno resumido;
 - entre fases grandes, sugira ao usuário uma sessão nova com o estado salvo;

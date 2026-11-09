@@ -1,6 +1,6 @@
 ---
 name: implementador-haiku
-description: Worker barato com escrita e esforço médio (cheap_worker reforçado). Primeira escolha para implementação com contrato fechado, como arte procedural, dados e telas seguindo interfaces já definidas. Se falhar a aceitação após a rodada de correção, o principal escala para implementador-sonnet. Papel de cost-aware-delegation.
+description: Worker barato com escrita e esforço médio (cheap_worker reforçado). Primeira escolha para implementação curta, com contrato fechado e resultado conferível por comando, como dados, telas e funções seguindo interfaces já definidas. Não use para laços longos (muitos passos encadeados, processos em segundo plano, depuração aberta): divida a tarefa ou use implementador-sonnet. Se falhar a aceitação após a rodada de correção, o principal escala para implementador-sonnet. Papel de cost-aware-delegation.
 model: haiku
 effort: medium
 ---

@@ -17,6 +17,8 @@ Sem medição, diga **economia não medida**; para medir, use
 ### 1. Decida
 
 - Trivial, acoplado ou mais barato de fazer do que de explicar: faça direto.
+- Cadeia de passos dependentes que cabe num contexto só: faça direto ou use
+  um único worker. Vários agentes só pagam quando há peças independentes.
 - Trabalho substancial e delimitado: delegue. Peças independentes podem
   rodar em paralelo, poucas por vez.
 - Se o ambiente só cria subagentes a pedido do usuário e não há autorização,
@@ -45,9 +47,16 @@ Leia a referência do ambiente: [Claude Code](references/claude.md) ou
   `balanced_worker`; o `cheap_worker` só extrai e coleta.
 - Verificação longa (build, suíte de testes, logs) também é delegável: peça
   ao `cheap_worker` o resultado resumido, não o log inteiro.
-- Implementação com contrato fechado começa no `cheap_worker`. Ao escolher o
-  `balanced_worker` nesse caso, o motivo do anúncio diz o que exige mais
-  (ambiguidade, decisão de design, falha anterior do nível barato).
+- Implementação começa no `cheap_worker` quando valem as três condições:
+  contrato fechado, resultado conferível por comando e tarefa curta. O erro
+  de um modelo pequeno precisa ser barato de perceber.
+- Laço longo (muitos passos encadeados, processos em segundo plano,
+  depuração aberta) não vai para o `cheap_worker`: divida em tarefas curtas
+  ou use o `balanced_worker`. Compare o custo da tarefa concluída, não o
+  preço por token.
+- Ao escolher o `balanced_worker` com contrato fechado, o motivo do anúncio
+  diz o que exige mais (ambiguidade, decisão de design, laço longo, falha
+  anterior do nível barato).
 
 Envie sempre o modelo explicitamente; omitir herda o modelo do principal e
 anula a economia. Cada arquivo tem um só responsável. Requisito ambíguo ou
@@ -88,8 +97,31 @@ Se o runtime mostrar um modelo diferente do pedido, avise o usuário.
 
 Confira o diff e rode as verificações proporcionais ao risco. Um relatório do
 worker não é prova. Mantenha as ressalvas dele ("não confirmado") no resumo.
-Se o worker falhar na aceitação, corrija o escopo uma vez; persistindo,
-assuma ou escale o nível.
+Se o worker falhar na aceitação, suba um degrau por vez e registre o motivo:
+
+1. **Verificação:** corrija o escopo e ponha no prompt o comando que o
+   worker roda antes de relatar.
+2. **Esforço:** um nível acima no mesmo modelo, se o runtime permitir.
+3. **Modelo:** o nível seguinte, começando no esforço mais baixo dele.
+
+Depois de dois degraus sem sucesso, trate como travado (revisão concorrente)
+ou assuma a tarefa.
+
+### 5. Poupe o principal
+
+O principal relê o contexto inteiro a cada turno; nas sessões medidas ele
+consumiu mais do que todos os workers somados. Cada turno seu é o mais caro
+da sessão:
+
+- Não espere worker com `sleep` em laço nem polling: use a espera do runtime
+  ou encerre o turno.
+- Verificação longa, script de bancada e monitoramento vão para um worker
+  barato, com condição de parada e retorno resumido.
+- Monitores e notificações viram turnos do principal: filtre para os eventos
+  que mudam uma decisão.
+- Ao fim de uma fase grande, sugira ao usuário compactar ou abrir sessão
+  nova com o estado salvo. Não troque o modelo do principal no meio da
+  sessão: a troca paga o cache inteiro de novo.
 
 ## Revisão concorrente
 
@@ -128,5 +160,6 @@ Antes de concluir, confira:
 - Se o diff toca autenticação, permissões, credenciais ou dados reais, a
   revisão concorrente foi feita; se não foi, diga ao usuário por quê.
 - Riscos restantes e ressalvas dos workers ditos ao usuário.
+- Escaladas de esforço ou de modelo ditas ao usuário, com o motivo.
 
 Para testar esta skill, veja [references/evaluation.md](references/evaluation.md).
