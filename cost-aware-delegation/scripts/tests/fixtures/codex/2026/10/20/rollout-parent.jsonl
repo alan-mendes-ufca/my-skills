@@ -1,0 +1,8 @@
+{"timestamp": "2026-10-20T12:00:00Z", "type": "session_meta", "payload": {"id": "parent000-0000", "cwd": "/tmp/cx", "timestamp": "2026-10-20T12:00:00Z"}}
+{"timestamp": "t", "type": "turn_context", "payload": {"model": "gpt-5", "effort": "high"}}
+{"timestamp": "t", "type": "response_item", "payload": {"type": "message", "role": "user", "content": [{"type": "output_text", "text": "use cost-aware-delegation"}]}}
+{"timestamp": "t", "type": "response_item", "payload": {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "→ worker1 gpt-5-mini revisa"}]}}
+{"timestamp": "t", "type": "response_item", "payload": {"type": "function_call", "name": "spawn_agent", "arguments": "{\"task_name\": \"worker1\", \"model\": \"gpt-5-mini\", \"reasoning_effort\": \"low\"}"}}
+{"timestamp": "t", "type": "response_item", "payload": {"type": "function_call", "name": "followup_task", "arguments": "{\"target\": \"worker1\"}"}}
+{"timestamp": "t", "type": "event_msg", "payload": {"type": "token_count", "info": {"total_token_usage": {"total_tokens": 1000, "output_tokens": 100}}}}
+{"timestamp": "t", "type": "event_msg", "payload": {"type": "token_count", "info": {"total_token_usage": {"total_tokens": 2000, "output_tokens": 200}}}}

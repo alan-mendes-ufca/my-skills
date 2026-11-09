@@ -15,7 +15,10 @@ Esta referência não garante aliases, modelos ou recursos em todas as versões.
    parâmetro cai em `general-purpose`. Use `general-purpose` apenas quando o
    worker precisar editar arquivos ou executar comandos com efeito.
 3. **Publique a linha de anúncio da skill antes de cada chamada**, com o
-   `subagent_type` e o alias enviado em `model` (ex.: `sonnet`).
+   `subagent_type` e o alias enviado em `model` (ex.: `sonnet`). Ela vai num
+   bloco de texto da resposta, antes do bloco `tool_use`. O raciocínio
+   (thinking) fica recolhido no CLI: anúncio escrito só ali não conta. Uma
+   resposta que contém `Agent` sem texto visível antes está incompleta.
 4. Ter `model` no schema significa que a seleção existe: não trate a sessão
    como "só herança" nem execute tudo diretamente por esse motivo.
 
@@ -47,15 +50,29 @@ modelo na interface, e o frontmatter fixa modelo, esforço e ferramentas.
 | `balanced_worker` | `implementador-sonnet` | sonnet / medium | sim |
 | `deep_worker` | `especialista-opus` | opus / high | sim |
 | `deep_worker` (revisão concorrente) | `revisor-opus` | opus / high | não |
+| `deep_worker` (revisão, principal em Fable) | `revisor-fable` | fable / high | não |
 
 - Envie `model` igual ao do agente (o parâmetro da chamada prevalece sobre o
   frontmatter). Para outro modelo, escolha outro agente; não sobrescreva, ou o
   nome exibido deixa de corresponder ao modelo.
 - Não envie `effort`: ele já vem do frontmatter.
-- **Haiku primeiro (experimental):** com o contrato fechado pelo principal,
-  comece por `implementador-haiku`. Use `implementador-sonnet` quando a tarefa
-  for ambígua, exigir decisão de design, ou quando o Haiku falhar a aceitação
-  após a rodada de correção. Registre a escalada e o motivo.
+- **Haiku primeiro, com três condições:** contrato fechado pelo principal,
+  resultado conferível por comando (teste, build, script) e tarefa curta
+  (poucos arquivos, um objetivo). Com as três, comece por `implementador-haiku`.
+  Tarefa ambígua ou com decisão de design começa em `implementador-sonnet`.
+- **Laço longo não é trabalho do Haiku:** tarefa com muitos passos encadeados
+  (servidor mais ferramentas mais testes, suíte de verificação com processos em
+  segundo plano, depuração aberta) vai dividida em tarefas curtas de Haiku ou
+  inteira para `implementador-sonnet`. Numa sessão medida, um `executor-haiku`
+  passou de 80 turnos e deixou processos em segundo plano que o principal
+  precisou encerrar, e sete workers Haiku passaram de 100 mil tokens de
+  contexto. O preço por token engana: compare o custo da tarefa
+  concluída, com o retrabalho.
+- **Escada de escalada**, um degrau por vez, registrando o motivo: (1)
+  acrescente ao prompt o comando de verificação que o worker deve rodar antes
+  de relatar; (2) suba o esforço: `executor-haiku` (low) → `implementador-haiku`
+  (medium); (3) suba o modelo: `implementador-sonnet`, e só depois
+  `especialista-opus`.
 - **Fatos separados da implementação:** dados factuais (status de conservação,
   dados científicos, referências) vão para um `pesquisador-haiku` à parte, não
   para o worker que escreve código ou arte.
@@ -63,6 +80,12 @@ modelo na interface, e o frontmatter fixa modelo, esforço e ferramentas.
 
 Para a **revisão concorrente** da skill, use `revisor-opus` em contexto novo:
 plano ou diff e arquivos, sem o raciocínio do principal, e a decisão a avaliar.
+Com o principal em Opus, `revisor-opus` é o "mesmo nível em contexto novo" da
+skill. Com o principal em Fable, use `revisor-fable` se o `enum` de `model`
+tiver `fable`; se não tiver, use `revisor-opus` e diga ao usuário que o revisor
+ficou abaixo do principal. Lance o revisor escolhido sem esperar o usuário
+pedir sempre que o diff tocar
+autenticação, papéis, permissões, credenciais ou dados reais.
 
 ## Mapeamento genérico de papéis
 
@@ -109,13 +132,56 @@ Exemplo de anúncio:
 `Mapear handlers de auth → pesquisador-haiku (haiku) → coleta delimitada`
 
 Em lançamentos em lote, publique uma linha por tarefa no texto da mesma
-resposta, antes das chamadas `Agent`.
+resposta, antes das chamadas `Agent`. Uma frase que resume o lote ("disparo
+três implementações em paralelo") não substitui as linhas:
+
+```text
+Motor de downloads → implementador-sonnet (sonnet) → fila com concorrência e retomada
+Interface Compose → implementador-sonnet (sonnet) → telas sobre contrato fechado, com estado
+Lógica pura e testes → implementador-haiku (haiku) → contrato e fixtures prontos
+```
+
+Para dizer ao usuário qual versão rodou, leia o `model` das mensagens do
+worker em `~/.claude/projects/<projeto>/<sessão>/subagents/`; sem isso, diga
+que a versão exata não foi confirmada.
+
+O alias `haiku` resolve para Haiku 5.5 na API da Anthropic (Claude Code 2.1.293
+ou mais novo), mas ainda para Haiku 4.5 em Bedrock, Google Cloud, Microsoft
+Foundry e Claude Platform na AWS. Nesses provedores, confirme o modelo na
+transcrição do worker antes de contar com o comportamento do 5.5.
 
 ## Principal em planos com limite
 
 - Em planos com limite de sessão (ex.: Pro), sugira ao usuário, uma vez, rodar
   o principal com esforço `medium`. Não mude modelo ou esforço por conta própria.
 - Confira screenshots por amostra, não todas as imagens de todos os workers.
+- O ponto de partida que a Anthropic recomenda para o principal é Opus em
+  esforço `medium`; Fable se justifica quando o trabalho é de arquitetura,
+  migração grande ou coordena muitos subagentes. É sugestão para dar ao usuário
+  uma vez, não mudança a fazer por conta própria.
+- Não troque o modelo do principal no meio da sessão: o cache pertence ao
+  modelo que o escreveu, e a troca paga a escrita do cache inteiro de novo.
+
+## Consumo do principal
+
+O principal relê o contexto a cada turno, então cada turno custa mais conforme a
+sessão cresce. Numa sessão medida, o principal consumiu cerca de 100 milhões de
+tokens de entrada (com cache) contra 32 milhões de todos os workers somados,
+em 286 turnos com 246 chamadas `Bash` próprias.
+
+- Verificação com comandos já definidos (build, suíte de testes, leitura de
+  logs, script de bancada pronto) vai para `executor-haiku`, com a lista de
+  comandos, condição de parada e retorno resumido. Diga no prompt para não
+  deixar processo em segundo plano.
+- Verificação que exige diagnosticar e corrigir no caminho é laço longo: vai
+  para `implementador-sonnet`.
+- Cada evento de `Monitor` e cada notificação de tarefa é um turno do principal.
+  Filtre o monitor para os eventos que mudam uma decisão; não acompanhe linha a
+  linha.
+- Não faça polling de worker: aguarde a notificação de conclusão.
+- Ao fim de uma fase grande, sugira ao usuário `/compact` ou uma sessão nova com
+  o estado salvo.
+- Peça relatório curto aos workers; detalhe vai para arquivo.
 
 ## Limites e concorrência
 
@@ -124,8 +190,12 @@ resposta, antes das chamadas `Agent`.
 - O limite de uso aparece como `rate_limit` (HTTP 429). Ao retomar, não
   relance o lote inteiro: continue do estado salvo com menos concorrência.
 - Encerre um worker que repete relatórios com `TaskStop`.
+- O Haiku 5.5 cobra uma faixa mais cara acima de 100 mil tokens de prompt.
+  Worker Haiku com contexto pequeno e tarefa curta mantém a vantagem de preço;
+  laço longo a perde.
 
 Fonte: https://code.claude.com/docs/en/sub-agents
+Fonte dos pontos de partida e preços: https://claude.dev/blog/which-claude-model-should-you-build-with/ (9 nov. 2026)
 
 ## Contexto e ciclo de vida
 
@@ -139,7 +209,12 @@ recriá-lo. Evite polling frequente.
 
 Se houver `isolation: "worktree"`, ele pode separar escritas do repositório, mas
 não elimina conflitos de integração nem isola serviços externos compartilhados.
-Sem isolamento, serialize edições sobrepostas.
+Ele exige repositório git (ou hooks `WorktreeCreate`): confira com
+`git rev-parse --is-inside-work-tree` antes de pedir. Sem isolamento,
+serialize edições sobrepostas.
+
+Continue um worker com `SendMessage` só para corrigir o mesmo escopo; escopo
+novo pede `Agent` novo.
 
 Consultas `antigravity-*` seguem a política de revisões externas da skill principal;
 não são uma família Claude nem um fallback silencioso quando `Agent` falta.
